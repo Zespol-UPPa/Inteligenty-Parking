@@ -1,0 +1,139 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: smartparking-db
+    environment:
+      POSTGRES_DB: smart_parking
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schemat_InteligentnyParking.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.user-service
+    container_name: user-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smart_parking
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+    networks:
+      - smartparking-network
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.payment-service
+    container_name: payment-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smart_parking
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+    networks:
+      - smartparking-network
+
+  parking-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.parking-service
+    container_name: parking-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smart_parking
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+    networks:
+      - smartparking-network
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin-service
+    container_name: admin-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smart_parking
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+    networks:
+      - smartparking-network
+
+  worker-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker-service
+    container_name: worker-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smart_parking
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+    networks:
+      - smartparking-network
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.api-gateway
+    container_name: api-gateway
+    depends_on:
+      - user-service
+      - payment-service
+      - parking-service
+      - admin-service
+      - worker-service
+    ports:
+      - "8090:8090"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+      ROUTES_USER_SERVICE: http://user-service:8081
+      ROUTES_PAYMENT_SERVICE: http://payment-service:8082
+      ROUTES_PARKING_SERVICE: http://parking-service:8083
+      ROUTES_ADMIN_SERVICE: http://admin-service:8084
+      ROUTES_WORKER_SERVICE: http://worker-service:8085
+    networks:
+      - smartparking-network
+
+volumes:
+  postgres_data:
+
+networks:
+  smartparking-network:
+    driver: bridge
+

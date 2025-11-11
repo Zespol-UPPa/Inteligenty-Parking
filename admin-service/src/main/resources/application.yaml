@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: admin-service
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
+
+server:
+  port: 8084
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info"
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 3600

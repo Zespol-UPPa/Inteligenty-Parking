@@ -1,0 +1,23 @@
+### Java / Maven
+target/
+*.class
+*.log
+hs_err_pid*
+
+### IntelliJ / IDEA
+.idea/
+*.iml
+out/
+
+### VS Code
+.vscode/
+
+### OS
+.DS_Store
+Thumbs.db
+
+### Environment / secrets
+.env
+.env.*
+
+

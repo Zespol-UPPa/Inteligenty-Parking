@@ -1,0 +1,24 @@
+FROM maven:3.9-eclipse-temurin-21 AS build
+
+WORKDIR /app
+
+COPY security-core/pom.xml ./security-core/
+COPY security-core/src ./security-core/src
+RUN mvn -f security-core/pom.xml clean install -DskipTests
+
+COPY core-dto/pom.xml ./core-dto/
+COPY core-dto/src ./core-dto/src
+RUN mvn -f core-dto/pom.xml clean install -DskipTests
+
+COPY admin-service/pom.xml ./admin-service/
+COPY admin-service/src ./admin-service/src
+RUN mvn -f admin-service/pom.xml clean package -DskipTests
+
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+COPY --from=build /app/admin-service/target/*.jar app.jar
+
+EXPOSE 8084
+ENTRYPOINT ["java", "-jar", "app.jar"]
+

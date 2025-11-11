@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: user-gateway
+server:
+  port: 8090
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 3600
+
+routes:
+  user-service: ${ROUTES_USER_SERVICE}
+  payment-service: ${ROUTES_PAYMENT_SERVICE}
+  parking-service: ${ROUTES_PARKING_SERVICE}
+  admin-service: ${ROUTES_ADMIN_SERVICE}
+  worker-service: ${ROUTES_WORKER_SERVICE}

@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="50b67794-910d-4f82-a467-c901e67305f0" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../.idea/Projekt_Inteligenty-parking.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../admin-service/.gitattributes" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../admin-service/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../admin-service/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../admin-service/mvnw" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../admin-service/mvnw.cmd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../admin-service/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../admin-service/src/main/java/com/smartparking/admin_service/AdminServiceApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../admin-service/src/main/java/com/smartparking/admin_service/config/WebConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../admin-service/src/main/java/com/smartparking/admin_service/controller/AdminController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../admin-service/src/main/java/com/smartparking/admin_service/security/JwtContextFilter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../admin-service/src/main/resources/application.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../admin-service/src/test/java/com/smartparking/admin_service/AdminServiceApplicationTests.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/.gitattributes" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/mvnw" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/mvnw.cmd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/UserGatewayApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/config/JwtConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/config/RoutesProperties.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/config/SecurityConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/controller/AuthController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/controller/ProxyController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/controller/UserController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/filter/JwtAuthFilter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/service/DownstreamClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/service/GatewayService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/service/RoleBasedRouteResolver.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/service/RouteResolver.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/java/com/smartparking/api_gateway/service/WebClientDownstreamClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/resources/application.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/main/resources/application.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api-gateway/src/test/java/com/smartparking/api_gateway/UserGatewayApplicationTests.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/dto/AccountDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/dto/CustomerDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/dto/ParkingLocationDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/dto/ParkingSpotDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/dto/PaymentDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/dto/ReservationDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/dto/UserDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/dto/VehicleDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/dto/VirtualPaymentDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/dto/WalletDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/enums/PaymentStatus.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/enums/Status.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/enums/StatusPaid.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/enums/StatusReservation.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/interfaces/Identifiable.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/response/ApiResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/response/ErrorResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/smartparking/core/response/PaginatedResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/com/smartparking/AppTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../parking-service/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../parking-service/src/main/java/com/smartparking/parking_service/ParkingServiceApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../parking-service/src/main/java/com/smartparking/parking_service/controller/ParkingController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../parking-service/src/main/java/com/smartparking/parking_service/repository/ParkingRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../parking-service/src/main/java/com/smartparking/parking_service/service/ParkingQueryService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../parking-service/src/main/resources/application.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../payment-service/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../payment-service/src/main/java/com/smartparking/payment_service/PaymentServiceApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../payment-service/src/main/java/com/smartparking/payment_service/controller/PaymentController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../payment-service/src/main/java/com/smartparking/payment_service/repository/VirtualPaymentRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../payment-service/src/main/java/com/smartparking/payment_service/repository/WalletRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../payment-service/src/main/java/com/smartparking/payment_service/service/PaymentService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../payment-service/src/main/resources/application.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/src/main/java/com/smartparking/App.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/src/main/java/com/smartparking/resources/application.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/src/main/java/com/smartparking/security/InternalAuthFilter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/src/main/java/com/smartparking/security/JwtData.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/src/main/java/com/smartparking/security/JwtUtil.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/src/main/java/com/smartparking/security/RequestContext.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/src/main/java/com/smartparking/security/RequestContextMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/src/main/java/com/smartparking/security/RequestContextResolver.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/src/main/java/com/smartparking/security/Role.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/src/main/java/com/smartparking/security/SecurityException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../security-core/src/test/java/com/smartparking/AppTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/.gitattributes" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/mvnw" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/mvnw.cmd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/src/main/java/com/smartparking/user_service/UserServiceApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/src/main/java/com/smartparking/user_service/config/WebConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/src/main/java/com/smartparking/user_service/controller/UserController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/src/main/java/com/smartparking/user_service/repository/ReservationRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/src/main/java/com/smartparking/user_service/repository/UserRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/src/main/java/com/smartparking/user_service/repository/VehicleRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/src/main/java/com/smartparking/user_service/security/JwtContextFilter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/src/main/java/com/smartparking/user_service/service/ReservationService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/src/main/java/com/smartparking/user_service/service/UserProfileService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/src/main/java/com/smartparking/user_service/service/VehicleService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/src/main/resources/application.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../user-service/src/test/java/com/smartparking/user_service/UserServiceApplicationTests.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../worker-service/.gitattributes" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../worker-service/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../worker-service/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../worker-service/mvnw" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../worker-service/mvnw.cmd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../worker-service/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../worker-service/src/main/java/com/smartparking/worker_service/WorkerServiceApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../worker-service/src/main/java/com/smartparking/worker_service/config/WebConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../worker-service/src/main/java/com/smartparking/worker_service/controller/WorkerController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../worker-service/src/main/java/com/smartparking/worker_service/security/JwtContextFilter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../worker-service/src/main/resources/application.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../worker-service/src/test/java/com/smartparking/worker_service/WorkerServiceApplicationTests.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../README.md" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+        <option value="Enum" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 1
+}]]></component>
+  <component name="ProjectId" id="35I8WfWQuiBDseubzkD2uPrriWn" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Maven. [org.apache.maven.plugins:maven-archetype-plugin:RELEASE:generate].executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/monik/Desktop/Projekt_Inteligenty-parking",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9f38398b9061-39b83d9b5494-intellij.indexing.shared.core-IU-241.18034.62" />
+        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-IU-241.18034.62" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="50b67794-910d-4f82-a467-c901e67305f0" name="Changes" comment="" />
+      <created>1762786259885</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1762786259885</updated>
+      <workItem from="1762786260968" duration="12515000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

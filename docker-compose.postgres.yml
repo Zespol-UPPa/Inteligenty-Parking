@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16
+    container_name: smartpg
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+      POSTGRES_DB: smart_parking
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
+
+
+
