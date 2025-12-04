@@ -2,6 +2,8 @@ package com.smartparking.admin_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
 public class AdminServiceApplication {
@@ -10,4 +12,8 @@ public class AdminServiceApplication {
 		SpringApplication.run(AdminServiceApplication.class, args);
 	}
 
+	@Bean
+	public RestTemplate restTemplate() {
+		return new RestTemplate();
+	}
 }

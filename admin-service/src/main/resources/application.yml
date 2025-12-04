@@ -1,0 +1,6 @@
+server:
+  port: 8084
+
+jwt:
+  secret: ${JWT_SECRET:change-me-to-a-strong-secret-key-of-at-least-32-chars}
+
