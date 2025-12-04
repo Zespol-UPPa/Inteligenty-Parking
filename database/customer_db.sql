@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict n6TxTIbn2G98h7HdU1vh4rvCUG0BHvpnIAGOThhzPSDMHvUmfGKjnlxZdfvDBYU
+\restrict oxIwaTEqTzwOLJhujWf744ErLWu923FZTxOwpJhyFqjx6qTkYdENYTYYzdqC1ai
 
 -- Dumped from database version 18.0
 -- Dumped by pg_dump version 18.0
 
--- Started on 2025-11-20 20:56:57
+-- Started on 2025-12-02 20:03:56
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -57,7 +57,7 @@ CREATE SEQUENCE public.customer_customer_id_seq
 ALTER SEQUENCE public.customer_customer_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4926 (class 0 OID 0)
+-- TOC entry 4928 (class 0 OID 0)
 -- Dependencies: 219
 -- Name: customer_customer_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -73,7 +73,7 @@ ALTER SEQUENCE public.customer_customer_id_seq OWNED BY public.customer.customer
 CREATE TABLE public.vehicle (
     vehicle_id integer NOT NULL,
     licence_plate character varying(15) NOT NULL,
-    ref_account_id integer
+    customer_id integer NOT NULL
 );
 
 
@@ -96,7 +96,7 @@ CREATE SEQUENCE public.vehicle_vehicle_id_seq
 ALTER SEQUENCE public.vehicle_vehicle_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4927 (class 0 OID 0)
+-- TOC entry 4929 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: vehicle_vehicle_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -113,7 +113,7 @@ CREATE TABLE public.wallet (
     wallet_id integer NOT NULL,
     balance_minor numeric(10,2) NOT NULL,
     currency_code character varying(5) NOT NULL,
-    ref_account_id integer NOT NULL
+    customer_id integer CONSTRAINT wallet_ref_account_id_not_null NOT NULL
 );
 
 
@@ -136,7 +136,7 @@ CREATE SEQUENCE public.wallet_wallet_id_seq
 ALTER SEQUENCE public.wallet_wallet_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4928 (class 0 OID 0)
+-- TOC entry 4930 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: wallet_wallet_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -195,11 +195,29 @@ ALTER TABLE ONLY public.wallet
     ADD CONSTRAINT wallet_pkey PRIMARY KEY (wallet_id);
 
 
--- Completed on 2025-11-20 20:56:59
+--
+-- TOC entry 4774 (class 2606 OID 25198)
+-- Name: vehicle fk_child_parent; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.vehicle
+    ADD CONSTRAINT fk_child_parent FOREIGN KEY (customer_id) REFERENCES public.customer(customer_id);
+
+
+--
+-- TOC entry 4775 (class 2606 OID 25203)
+-- Name: wallet fk_wallet_customer; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.wallet
+    ADD CONSTRAINT fk_wallet_customer FOREIGN KEY (customer_id) REFERENCES public.customer(customer_id);
+
+
+-- Completed on 2025-12-02 20:03:58
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict n6TxTIbn2G98h7HdU1vh4rvCUG0BHvpnIAGOThhzPSDMHvUmfGKjnlxZdfvDBYU
+\unrestrict oxIwaTEqTzwOLJhujWf744ErLWu923FZTxOwpJhyFqjx6qTkYdENYTYYzdqC1ai
 
