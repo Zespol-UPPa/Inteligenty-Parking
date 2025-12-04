@@ -16,22 +16,28 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - smartparking-network
 
-  user-service:
+  customer-service:
     build:
       context: .
-      dockerfile: Dockerfile.user-service
-    container_name: user-service
+      dockerfile: Dockerfile.customer-service
+    container_name: customer-service
     depends_on:
       postgres:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smart_parking
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-}
+      PARKING_SERVICE_URL: http://parking-service:8083
     networks:
       - smartparking-network
 
@@ -43,13 +49,17 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     ports:
       - "8082:8082"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smart_parking
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+      CUSTOMER_SERVICE_URL: http://customer-service:8081
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-}
     networks:
       - smartparking-network
 
@@ -61,10 +71,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     ports:
       - "8083:8083"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smart_parking
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/parking_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
@@ -79,13 +91,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     ports:
       - "8084:8084"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smart_parking
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/admin_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+      PARKING_SERVICE_URL: http://parking-service:8083
     networks:
       - smartparking-network
 
@@ -97,13 +112,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     ports:
       - "8085:8085"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smart_parking
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/worker_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+      PARKING_SERVICE_URL: http://parking-service:8083
     networks:
       - smartparking-network
 
@@ -113,22 +131,157 @@ services:
       dockerfile: Dockerfile.api-gateway
     container_name: api-gateway
     depends_on:
-      - user-service
-      - payment-service
-      - parking-service
-      - admin-service
-      - worker-service
+      customer-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      parking-service:
+        condition: service_started
+      admin-service:
+        condition: service_started
+      worker-service:
+        condition: service_started
+      accounts-service:
+        condition: service_started
+      company-service:
+        condition: service_started
+      ocr-service:
+        condition: service_started
     ports:
       - "8090:8090"
     environment:
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
-      ROUTES_USER_SERVICE: http://user-service:8081
+      ROUTES_CUSTOMER_SERVICE: http://customer-service:8081
       ROUTES_PAYMENT_SERVICE: http://payment-service:8082
       ROUTES_PARKING_SERVICE: http://parking-service:8083
       ROUTES_ADMIN_SERVICE: http://admin-service:8084
       ROUTES_WORKER_SERVICE: http://worker-service:8085
+      ROUTES_ACCOUNTS_SERVICE: http://accounts-service:8087
+      ROUTES_COMPANY_SERVICE: http://company-service:8091
+      ROUTES_OCR_SERVICE: http://ocr-service:8086
     networks:
       - smartparking-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: smartparking-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - smartparking-network
+
+  accounts-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.accounts-service
+    container_name: accounts-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/account_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+    networks:
+      - smartparking-network
+
+  company-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.company-service
+    container_name: company-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    ports:
+      - "8091:8091"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/company_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+    networks:
+      - smartparking-network
+
+  ocr-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.ocr-service
+    container_name: ocr-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_started
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ocr_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+    networks:
+      - smartparking-network
+
+  db-init:
+    image: postgres:16
+    container_name: smartparking-db-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - ./database:/sql
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        echo 'Waiting for postgres...'
+        until pg_isready -h postgres -U postgres; do sleep 1; done
+        echo 'Postgres is ready'
+        
+        echo 'Creating databases...'
+        psql -h postgres -U postgres -c "CREATE DATABASE account_db" 2>&1 || echo "account_db already exists or error"
+        psql -h postgres -U postgres -c "CREATE DATABASE company_db" 2>&1 || echo "company_db already exists or error"
+        psql -h postgres -U postgres -c "CREATE DATABASE ocr_db" 2>&1 || echo "ocr_db already exists or error"
+        psql -h postgres -U postgres -c "CREATE DATABASE customer_db" 2>&1 || echo "customer_db already exists or error"
+        psql -h postgres -U postgres -c "CREATE DATABASE payment_db" 2>&1 || echo "payment_db already exists or error"
+        psql -h postgres -U postgres -c "CREATE DATABASE parking_db" 2>&1 || echo "parking_db already exists or error"
+        psql -h postgres -U postgres -c "CREATE DATABASE admin_db" 2>&1 || echo "admin_db already exists or error"
+        psql -h postgres -U postgres -c "CREATE DATABASE worker_db" 2>&1 || echo "worker_db already exists or error"
+        
+        echo 'Importing SQL schemas...'
+        psql -h postgres -U postgres -d account_db -f /sql/account_db.sql 2>&1 || echo "Error importing account_db.sql"
+        psql -h postgres -U postgres -d company_db -f /sql/company_db.sql 2>&1 || echo "Error importing company_db.sql"
+        psql -h postgres -U postgres -d ocr_db -f /sql/ocr_db.sql 2>&1 || echo "Error importing ocr_db.sql"
+        psql -h postgres -U postgres -d customer_db -f /sql/customer_db.sql 2>&1 || echo "Error importing customer_db.sql"
+        psql -h postgres -U postgres -d payment_db -f /sql/payment_db.sql 2>&1 || echo "Error importing payment_db.sql"
+        psql -h postgres -U postgres -d parking_db -f /sql/parking_db.sql 2>&1 || echo "Error importing parking_db.sql"
+        psql -h postgres -U postgres -d admin_db -f /sql/admin_db.sql 2>&1 || echo "Error importing admin_db.sql"
+        psql -h postgres -U postgres -d worker_db -f /sql/worker_db.sql 2>&1 || echo "Error importing worker_db.sql"
+        
+        echo 'Database initialization completed'
+    networks:
+      - smartparking-network
+    restart: "no"
 
 volumes:
   postgres_data:
@@ -136,4 +289,3 @@ volumes:
 networks:
   smartparking-network:
     driver: bridge
-

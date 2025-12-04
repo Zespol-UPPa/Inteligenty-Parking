@@ -1,7 +1,7 @@
 package com.smartparking.api_gateway.filter;
 
-import com.smartparking.security.JwtData;
-import com.smartparking.security.JwtUtil;
+import com.smartparking.api_gateway.security.JwtData;
+import com.smartparking.api_gateway.security.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,7 +30,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/auth") || path.startsWith("/health") || path.startsWith("/actuator");
+        if (path == null) return false;
+        // Allow authentication endpoints and actuator
+        if (path.startsWith("/auth") || path.startsWith("/actuator")) return true;
+        // Allow any health endpoint (e.g. /health or /payment/health, /customer/health)
+        if (path.equals("/health") || path.endsWith("/health")) return true;
+        return false;
     }
 
     @Override
@@ -49,7 +54,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             // 🔹 Tworzymy listę ról (Spring wymaga prefiksu ROLE_)
             List<SimpleGrantedAuthority> authorities =
-                    List.of(new SimpleGrantedAuthority("ROLE_" + data.getRole().name()));
+                    List.of(new SimpleGrantedAuthority("ROLE_" + data.getRole()));
 
             // 🔹 Tworzymy Authentication z danymi z JWT
             UsernamePasswordAuthenticationToken authentication =
@@ -64,7 +69,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             chain.doFilter(req, res);
-        } catch (SecurityException ex) {
+        } catch (io.jsonwebtoken.JwtException | IllegalArgumentException ex) {
             res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         }
     }
