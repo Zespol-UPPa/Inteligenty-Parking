@@ -1,16 +1,19 @@
 spring:
   application:
-    name: user-gateway
+    name: api-gateway
 server:
   port: 8090
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:change-me-to-a-strong-secret-key-of-at-least-32-chars}
   expiration: 3600
 
 routes:
-  user-service: ${ROUTES_USER_SERVICE}
+  customer-service: ${ROUTES_CUSTOMER_SERVICE}
   payment-service: ${ROUTES_PAYMENT_SERVICE}
   parking-service: ${ROUTES_PARKING_SERVICE}
   admin-service: ${ROUTES_ADMIN_SERVICE}
   worker-service: ${ROUTES_WORKER_SERVICE}
+  accounts-service: ${ROUTES_ACCOUNTS_SERVICE}
+  company-service: ${ROUTES_COMPANY_SERVICE}
+  ocr-service: ${ROUTES_OCR_SERVICE}

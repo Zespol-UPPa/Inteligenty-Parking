@@ -1,0 +1,22 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: payment-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/payment_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    hikari:
+      minimum-idle: 1
+      maximum-pool-size: 10
+      connection-timeout: 30000
+      initialization-fail-timeout: 30000
+
+jwt:
+  secret: ${JWT_SECRET:change-me-to-a-strong-secret-key-of-at-least-32-chars}
+
+customer:
+  service:
+    url: ${CUSTOMER_SERVICE_URL:http://customer-service:8081}

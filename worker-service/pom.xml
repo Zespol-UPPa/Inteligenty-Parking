@@ -43,15 +43,25 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
+		<!-- Removed shared core modules (core-dto, security-core). Worker-service should define its DTOs and security locally -->
+		<!-- JJWT for local JWT util -->
 		<dependency>
-			<groupId>com.smartparking</groupId>
-			<artifactId>core-dto</artifactId>
-			<version>1.0-SNAPSHOT</version>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>0.11.5</version>
 		</dependency>
 		<dependency>
-			<groupId>com.smartparking</groupId>
-			<artifactId>security-core</artifactId>
-			<version>1.0-SNAPSHOT</version>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>0.11.5</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>0.11.5</version>
+			<scope>runtime</scope>
 		</dependency>
 
 		<dependency>

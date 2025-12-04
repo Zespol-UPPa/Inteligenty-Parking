@@ -14,14 +14,15 @@
     <description>Microservices-based Smart Parking System</description>
 
     <modules>
-        <module>security-core</module>
-        <module>core-dto</module>
-        <module>user-service</module>
+        <module>customer-service</module>
         <module>payment-service</module>
         <module>parking-service</module>
         <module>admin-service</module>
         <module>worker-service</module>
         <module>api-gateway</module>
+        <module>accounts-service</module>
+        <module>company-service</module>
+        <module>ocr-service</module>
     </modules>
 
     <properties>
@@ -60,4 +61,3 @@
         </pluginManagement>
     </build>
 </project>
-

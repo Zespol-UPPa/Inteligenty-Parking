@@ -2,16 +2,11 @@ FROM maven:3.9-eclipse-temurin-21 AS build
 
 WORKDIR /app
 
-COPY security-core/pom.xml ./security-core/
-COPY security-core/src ./security-core/src
-RUN mvn -f security-core/pom.xml clean install -DskipTests
-
-COPY core-dto/pom.xml ./core-dto/
-COPY core-dto/src ./core-dto/src
-RUN mvn -f core-dto/pom.xml clean install -DskipTests
-
+# Copy only the payment-service module
 COPY payment-service/pom.xml ./payment-service/
 COPY payment-service/src ./payment-service/src
+
+# Build the payment-service module
 RUN mvn -f payment-service/pom.xml clean package -DskipTests
 
 FROM eclipse-temurin:21-jre
@@ -21,4 +16,3 @@ COPY --from=build /app/payment-service/target/*.jar app.jar
 
 EXPOSE 8082
 ENTRYPOINT ["java", "-jar", "app.jar"]
-

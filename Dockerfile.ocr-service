@@ -1,0 +1,16 @@
+FROM maven:3.9-eclipse-temurin-21 AS build
+
+WORKDIR /app
+
+# Copy only the ocr-service module
+COPY ocr-service/pom.xml ./ocr-service/
+COPY ocr-service/src ./ocr-service/src
+
+# Build the ocr-service module
+RUN mvn -f ocr-service/pom.xml clean package -DskipTests
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /app/ocr-service/target/*.jar app.jar
+EXPOSE 8086
+ENTRYPOINT ["java", "-jar", "app.jar"]

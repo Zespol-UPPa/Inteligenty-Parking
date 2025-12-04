@@ -1,0 +1,16 @@
+FROM maven:3.9-eclipse-temurin-21 AS build
+
+WORKDIR /app
+
+# Copy only the company-service module
+COPY company-service/pom.xml ./company-service/
+COPY company-service/src ./company-service/src
+
+# Build the company-service module
+RUN mvn -f company-service/pom.xml clean package -DskipTests
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /app/company-service/target/*.jar app.jar
+EXPOSE 8091
+ENTRYPOINT ["java", "-jar", "app.jar"]
