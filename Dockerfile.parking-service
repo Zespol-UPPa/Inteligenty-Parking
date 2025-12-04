@@ -2,14 +2,7 @@ FROM maven:3.9-eclipse-temurin-21 AS build
 
 WORKDIR /app
 
-COPY security-core/pom.xml ./security-core/
-COPY security-core/src ./security-core/src
-RUN mvn -f security-core/pom.xml clean install -DskipTests
-
-COPY core-dto/pom.xml ./core-dto/
-COPY core-dto/src ./core-dto/src
-RUN mvn -f core-dto/pom.xml clean install -DskipTests
-
+# Copy only the parking-service module
 COPY parking-service/pom.xml ./parking-service/
 COPY parking-service/src ./parking-service/src
 RUN mvn -f parking-service/pom.xml clean package -DskipTests
@@ -21,4 +14,3 @@ COPY --from=build /app/parking-service/target/*.jar app.jar
 
 EXPOSE 8083
 ENTRYPOINT ["java", "-jar", "app.jar"]
-
