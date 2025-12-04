@@ -1,0 +1,18 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: worker-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/worker_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+
+jwt:
+  secret: ${JWT_SECRET:change-me-to-a-strong-secret-key-of-at-least-32-chars}
+
+parking:
+  service:
+    url: ${PARKING_SERVICE_URL:http://parking-service:8083}
+
