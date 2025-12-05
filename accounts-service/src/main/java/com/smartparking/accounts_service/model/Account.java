@@ -5,6 +5,7 @@ public class Account {
     private String username;
     private String passwordHash;
     private String role;
+    private Boolean isActive;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -14,4 +15,6 @@ public class Account {
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    public Boolean getActive() {return isActive;}
+    public void setActive(Boolean active) {isActive = active;}
 }
