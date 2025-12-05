@@ -32,20 +32,13 @@ public class JdbcLoginCodeRepository implements LoginCodeRepository {
     public LoginCode save(LoginCode code) {
         if (code.getId() == null) {
             // INSERT
-            jdbc.update(
-                    "INSERT INTO login_code(code, account_id, is_used) VALUES (?, ?, ?)",
+            Long id = jdbc.queryForObject(
+                    "INSERT INTO login_code(code, account_id, is_used) VALUES (?, ?, ?) RETURNING code_id",
+                    Long.class,
                     code.getCode(),
                     code.getAccountId(),
                     code.isUsed()
             );
-
-            Long id = jdbc.queryForObject(
-                    "SELECT code_id FROM login_code WHERE code = ? AND account_id = ?",
-                    Long.class,
-                    code.getCode(),
-                    code.getAccountId()
-            );
-            code.setId(id);
 
         } else {
             // UPDATE

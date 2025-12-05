@@ -1,7 +1,6 @@
 package com.smartparking.accounts_service.repo;
 
 import com.smartparking.accounts_service.model.Account;
-import com.smartparking.accounts_service.model.LoginCode;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -76,21 +75,15 @@ public class JdbcAccountRepository implements AccountRepository {
     @Override
     public Account save(Account account) {
         if (account.getId() == null) {
-            jdbc.update(
+            Long id = jdbc.queryForObject(
                     "INSERT INTO account(email, password_hash, role_account, is_active) " +
-                            "VALUES (?, ?, ?, ?)",
+                            "VALUES (?, ?, ?, ?) RETURNING account_id",
+                    Long.class,
                     account.getUsername(),
                     account.getPasswordHash(),
                     account.getRole(),
                     account.getActive()
             );
-
-            Long id = jdbc.queryForObject(
-                    "SELECT account_id FROM account WHERE email = ?",
-                    Long.class,
-                    account.getUsername()
-            );
-            account.setId(id);
         } else {
             jdbc.update(
                     "UPDATE account SET email = ?, password_hash = ?, role_account = ?, is_active = ? " +
