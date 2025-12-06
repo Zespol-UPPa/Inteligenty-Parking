@@ -1,13 +1,13 @@
 package com.smartparking.company_service.model;
 
 public class Company {
-    private Integer companyId;
+    private Long Id;
     private String nameCompany;
     private String address;
     private String taxId;
 
-    public Integer getCompanyId() { return companyId; }
-    public void setCompanyId(Integer companyId) { this.companyId = companyId; }
+    public Long getId() { return Id; }
+    public void setId(Long Id) { this.Id = Id; }
     public String getNameCompany() { return nameCompany; }
     public void setNameCompany(String nameCompany) { this.nameCompany = nameCompany; }
     public String getAddress() { return address; }
