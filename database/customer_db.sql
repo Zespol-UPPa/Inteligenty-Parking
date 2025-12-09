@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict oxIwaTEqTzwOLJhujWf744ErLWu923FZTxOwpJhyFqjx6qTkYdENYTYYzdqC1ai
+\restrict U0M54cMOScJIepYHb9pHSEDMxjrn4LLcJ2BThHP3P4L5VddDcXrbaZQubrRTAbf
 
 -- Dumped from database version 18.0
 -- Dumped by pg_dump version 18.0
 
--- Started on 2025-12-02 20:03:56
+-- Started on 2025-12-07 16:11:09
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -73,7 +73,7 @@ ALTER SEQUENCE public.customer_customer_id_seq OWNED BY public.customer.customer
 CREATE TABLE public.vehicle (
     vehicle_id integer NOT NULL,
     licence_plate character varying(15) NOT NULL,
-    customer_id integer NOT NULL
+    customer_id integer
 );
 
 
@@ -213,11 +213,11 @@ ALTER TABLE ONLY public.wallet
     ADD CONSTRAINT fk_wallet_customer FOREIGN KEY (customer_id) REFERENCES public.customer(customer_id);
 
 
--- Completed on 2025-12-02 20:03:58
+-- Completed on 2025-12-07 16:11:11
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict oxIwaTEqTzwOLJhujWf744ErLWu923FZTxOwpJhyFqjx6qTkYdENYTYYzdqC1ai
+\unrestrict U0M54cMOScJIepYHb9pHSEDMxjrn4LLcJ2BThHP3P4L5VddDcXrbaZQubrRTAbf
 
