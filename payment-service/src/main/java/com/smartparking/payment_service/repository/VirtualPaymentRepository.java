@@ -1,23 +1,21 @@
 package com.smartparking.payment_service.repository;
+import com.smartparking.payment_service.model.VirtualPayment;
 
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+public interface VirtualPaymentRepository {
+    Optional<VirtualPayment> findById(Long id);
+    List<VirtualPayment> findByAccountId(Long accountId);
+    List<VirtualPayment> findBySessionId(Long sessionId);
+    List<VirtualPayment> findAll();
+    VirtualPayment save(VirtualPayment payment);
+    List<VirtualPayment> findByAccountIdAndActivity(Long accountId, String activity);
+    List<VirtualPayment> findByAccountIdAndDateRange(Long accountId, LocalDateTime from, LocalDateTime to);
+    Long sumByAccountId(Long accountId);                              // suma płatności klienta
+    Long sumByAccountIdAndActivity(Long accountId, String activity);  // suma wg typu aktywności
+    Long sumAllPaid();                                                // suma wszystkich płatności (status = PAID)
+    Long countByAccountId(Long accountId);                            // liczba płatności klienta
+    Long countAll();
 
-import java.math.BigDecimal;
-
-@Repository
-public class VirtualPaymentRepository {
-    private final JdbcTemplate jdbc;
-    public VirtualPaymentRepository(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
-    }
-
-    public long create(Long accountId, Long sessionId, BigDecimal amount, String currencyCode, String statusPaid) {
-        // Amount is expected as major units (e.g. 12.34). Convert to minor units (e.g. 1234)
-        int amountMinor = amount.multiply(new BigDecimal(100)).intValue();
-        // Insert using the actual schema of virtual_payment
-        String sql = "INSERT INTO virtual_payment(amount_minor, currency_code, status_paid, date_transaction, ref_account_id, ref_session_id) " +
-                "VALUES (?, ?, CAST(? AS public.status_paid), now(), ?, ?) RETURNING payment_id";
-        return jdbc.queryForObject(sql, Long.class, amountMinor, currencyCode, statusPaid, accountId, sessionId);
-    }
 }

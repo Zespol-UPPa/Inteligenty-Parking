@@ -26,6 +26,7 @@ public class JdbcAccountRepository implements AccountRepository {
             a.setUsername(rs.getString("email"));
             a.setPasswordHash(rs.getString("password_hash"));
             a.setRole(rs.getString("role_account"));
+            a.setActive(rs.getBoolean("is_active"));
             return a;
         }
     };
@@ -43,33 +44,61 @@ public class JdbcAccountRepository implements AccountRepository {
     }
 
     @Override
+    public Optional<Account> findById(Long id) {
+        var list = jdbc.query(
+                "SELECT account_id, email, password_hash, role_account , is_active " +
+                        "FROM account WHERE account_id = ?",
+                mapper,
+                id
+        );
+        return list.stream().findFirst();
+    }
+
+    @Override
+    public Account deactivateById(Account account) {
+        jdbc.update(
+                "UPDATE account SET is_active = FALSE WHERE account_id = ?",
+                account.getId()
+        );
+        return account;
+    }
+
+    @Override
+    public Account markActiveById(Account account) {
+        jdbc.update(
+                "UPDATE account SET is_active = TRUE WHERE account_id = ?",
+                account.getId()
+        );
+        return account;
+    }
+
+    @Override
     public Account save(Account account) {
         if (account.getId() == null) {
-            // INSERT do account_db.account
-            jdbc.update(
-                    "INSERT INTO account(email, password_hash, role_account, is_active) VALUES (?, ?, ?, TRUE)",
-                    account.getUsername(),
-                    account.getPasswordHash(),
-                    account.getRole()
-            );
-            // pobierz wygenerowane account_id
             Long id = jdbc.queryForObject(
-                    "SELECT account_id FROM account WHERE email = ?",
+                    "INSERT INTO account(email, password_hash, role_account, is_active) " +
+                            "VALUES (?, ?, ?, ?) RETURNING account_id",
                     Long.class,
-                    account.getUsername()
-            );
-            account.setId(id);
-            return account;
-        } else {
-            jdbc.update(
-                    "UPDATE account SET email = ?, password_hash = ?, role_account = ? WHERE account_id = ?",
                     account.getUsername(),
                     account.getPasswordHash(),
                     account.getRole(),
+                    account.getActive()
+            );
+        } else {
+            jdbc.update(
+                    "UPDATE account SET email = ?, password_hash = ?, role_account = ?, is_active = ? " +
+                            "WHERE account_id = ?",
+                    account.getUsername(),
+                    account.getPasswordHash(),
+                    account.getRole(),
+                    account.getActive(),
                     account.getId()
             );
-            return account;
         }
+        return account;
     }
+
+
+
 }
 

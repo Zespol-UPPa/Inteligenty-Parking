@@ -1,7 +1,7 @@
 package com.smartparking.payment_service.service;
 
 import com.smartparking.payment_service.dto.PaymentResult;
-import com.smartparking.payment_service.repository.VirtualPaymentRepository;
+import com.smartparking.payment_service.repository.JdbcVirtualPaymentRepository;
 import com.smartparking.payment_service.client.CustomerWalletClient;
 import org.springframework.stereotype.Service;
 
@@ -11,13 +11,13 @@ import java.util.Optional;
 
 @Service
 public class PaymentService {
-    private final VirtualPaymentRepository payments;
+    private final JdbcVirtualPaymentRepository payments;
     private final CustomerWalletClient walletClient;
-    public PaymentService(VirtualPaymentRepository payments, CustomerWalletClient walletClient) {
+    public PaymentService(JdbcVirtualPaymentRepository payments, CustomerWalletClient walletClient) {
         this.payments = payments;
         this.walletClient = walletClient;
     }
-
+/*
     public PaymentResult chargeFromWallet(Long accountId, Long sessionId, BigDecimal amount, String currency) {
         Optional<Map<String, Object>> walletOpt = walletClient.getWallet(accountId);
         if (walletOpt.isEmpty()) {
@@ -51,4 +51,6 @@ public class PaymentService {
             return new PaymentResult(paymentId, "Failed");
         }
     }
+
+ */
 }
