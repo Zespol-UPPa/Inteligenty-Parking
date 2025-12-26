@@ -32,7 +32,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         if (path == null) return false;
         // Allow authentication endpoints and actuator
-        if (path.startsWith("/auth") || path.startsWith("/actuator")) return true;
+        if (path.startsWith("/auth") || path.startsWith("/api/auth") || path.startsWith("/actuator")) return true;
         // Allow any health endpoint (e.g. /health or /payment/health, /customer/health)
         if (path.equals("/health") || path.endsWith("/health")) return true;
         return false;

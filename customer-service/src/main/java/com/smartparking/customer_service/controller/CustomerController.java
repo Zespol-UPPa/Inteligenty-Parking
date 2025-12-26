@@ -1,5 +1,6 @@
 package com.smartparking.customer_service.controller;
 
+import com.smartparking.customer_service.service.WalletService;
 import com.smartparking.customer_service.security.RequestContext;
 import com.smartparking.customer_service.service.ReservationService;
 import com.smartparking.customer_service.service.CustomerProfileService;
@@ -19,11 +20,13 @@ public class CustomerController {
     private final CustomerProfileService profiles;
     private final VehicleService vehicles;
     private final ReservationService reservations;
+    private final WalletService walletService;
 
-    public CustomerController(CustomerProfileService profiles, VehicleService vehicles, ReservationService reservations) {
+    public CustomerController(CustomerProfileService profiles, VehicleService vehicles, ReservationService reservations, WalletService walletService) {
         this.profiles = profiles;
         this.vehicles = vehicles;
         this.reservations = reservations;
+        this.walletService = walletService;
     }
 
     private Long requireAccountId(RequestContext ctx) {
@@ -31,7 +34,11 @@ public class CustomerController {
             throw new IllegalArgumentException("Invalid request context: username is required");
         }
         try {
-            return Long.parseLong(ctx.getUsername());
+            Long accountId = Long.parseLong(ctx.getUsername());
+            if (accountId <= 0) {
+                throw new IllegalArgumentException("Invalid account ID: must be positive, got: " + accountId);
+            }
+            return accountId;
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Invalid account ID format: " + ctx.getUsername(), e);
         }
@@ -71,6 +78,24 @@ public class CustomerController {
         return ResponseEntity.ok(Map.of("id", id));
     }
 
+    @DeleteMapping("/vehicles/{vehicleId}")
+    public ResponseEntity<?> deleteVehicle(HttpServletRequest request,
+                                          @PathVariable Long vehicleId) {
+        RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
+        if (ctx == null) return ResponseEntity.status(401).build();
+        boolean deleted = vehicles.delete(vehicleId, requireAccountId(ctx));
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/wallet")
+    public ResponseEntity<?> getWallet(HttpServletRequest request) {
+        RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
+        if (ctx == null) return ResponseEntity.status(401).build();
+        return walletService.getByAccountId(requireAccountId(ctx))
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/reservations")
     public ResponseEntity<List<Map<String, Object>>> listReservations(HttpServletRequest request) {
         RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
@@ -89,6 +114,45 @@ public class CustomerController {
         Instant end = start.plusSeconds(durationSeconds != null ? durationSeconds : 3600);
         long id = reservations.create(requireAccountId(ctx), parkingId, spotId, start, end, "Reserved");
         return ResponseEntity.ok(Map.of("id", id));
+    }
+
+    @PutMapping("/password")
+    public ResponseEntity<?> changePassword(HttpServletRequest request,
+                                           @RequestBody Map<String, String> body) {
+        RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
+        if (ctx == null) return ResponseEntity.status(401).build();
+        // Note: Password change requires communication with accounts-service
+        // For now, return not implemented
+        return ResponseEntity.status(501).body(Map.of("error", "Password change not yet implemented"));
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<?> getHistory(HttpServletRequest request) {
+        RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
+        if (ctx == null) return ResponseEntity.status(401).build();
+        // Note: History requires implementation - may need to query parking-service
+        return ResponseEntity.ok(List.of());
+    }
+
+    @GetMapping("/history/statistics")
+    public ResponseEntity<?> getHistoryStatistics(HttpServletRequest request) {
+        RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
+        if (ctx == null) return ResponseEntity.status(401).build();
+        // Note: Statistics requires implementation
+        return ResponseEntity.ok(Map.of(
+                "totalSessions", 0,
+                "totalTime", 0,
+                "totalSpent", 0
+        ));
+    }
+
+    @PostMapping("/history/{sessionId}/pay")
+    public ResponseEntity<?> payForSession(HttpServletRequest request,
+                                          @PathVariable Long sessionId) {
+        RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
+        if (ctx == null) return ResponseEntity.status(401).build();
+        // Note: Payment requires implementation - may need to communicate with payment-service
+        return ResponseEntity.status(501).body(Map.of("error", "Payment not yet implemented"));
     }
 
     @GetMapping("/health")

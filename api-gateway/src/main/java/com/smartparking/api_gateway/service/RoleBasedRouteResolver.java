@@ -35,7 +35,8 @@ public class RoleBasedRouteResolver implements RouteResolver {
             return routes.getAdminService();
         } else if (p.startsWith("/worker/")) {
             return routes.getWorkerService();
-        } else if (p.startsWith("/accounts/")) {
+        } else if (p.startsWith("/accounts/") || p.startsWith("/auth/")) {
+            // /api/auth/** routes to accounts-service after /api/ prefix removal
             return routes.getAccountsService();
         } else if (p.startsWith("/company/")) {
             return routes.getCompanyService();

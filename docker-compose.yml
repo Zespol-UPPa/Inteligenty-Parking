@@ -1,16 +1,148 @@
 services:
-  postgres:
+  customer-db:
     image: postgres:16
-    container_name: smartparking-db
+    container_name: customer-db
     environment:
-      POSTGRES_DB: smart_parking
+      POSTGRES_DB: customer_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASS:-postgres}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/schemat_InteligentnyParking.sql:/docker-entrypoint-initdb.d/init.sql
+      - customer_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartparking-network
+
+  payment-db:
+    image: postgres:16
+    container_name: payment-db
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    ports:
+      - "5434:5432"
+    volumes:
+      - payment_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartparking-network
+
+  parking-db:
+    image: postgres:16
+    container_name: parking-db
+    environment:
+      POSTGRES_DB: parking_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    ports:
+      - "5435:5432"
+    volumes:
+      - parking_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartparking-network
+
+  admin-db:
+    image: postgres:16
+    container_name: admin-db
+    environment:
+      POSTGRES_DB: admin_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    ports:
+      - "5436:5432"
+    volumes:
+      - admin_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartparking-network
+
+  worker-db:
+    image: postgres:16
+    container_name: worker-db
+    environment:
+      POSTGRES_DB: worker_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    ports:
+      - "5437:5432"
+    volumes:
+      - worker_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartparking-network
+
+  account-db:
+    image: postgres:16
+    container_name: account-db
+    environment:
+      POSTGRES_DB: account_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    ports:
+      - "5438:5432"
+    volumes:
+      - account_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartparking-network
+
+  company-db:
+    image: postgres:16
+    container_name: company-db
+    environment:
+      POSTGRES_DB: company_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    ports:
+      - "5439:5432"
+    volumes:
+      - company_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartparking-network
+
+  ocr-db:
+    image: postgres:16
+    container_name: ocr-db
+    environment:
+      POSTGRES_DB: ocr_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    ports:
+      - "5440:5432"
+    volumes:
+      - ocr_db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -25,14 +157,14 @@ services:
       dockerfile: Dockerfile.customer-service
     container_name: customer-service
     depends_on:
-      postgres:
+      customer-db:
         condition: service_healthy
-      db-init:
+      customer-db-init:
         condition: service_completed_successfully
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://customer-db:5432/customer_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
@@ -47,14 +179,14 @@ services:
       dockerfile: Dockerfile.payment-service
     container_name: payment-service
     depends_on:
-      postgres:
+      payment-db:
         condition: service_healthy
-      db-init:
+      payment-db-init:
         condition: service_completed_successfully
     ports:
       - "8082:8082"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://payment-db:5432/payment_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
@@ -69,14 +201,14 @@ services:
       dockerfile: Dockerfile.parking-service
     container_name: parking-service
     depends_on:
-      postgres:
+      parking-db:
         condition: service_healthy
-      db-init:
+      parking-db-init:
         condition: service_completed_successfully
     ports:
       - "8083:8083"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/parking_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://parking-db:5432/parking_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
@@ -89,14 +221,14 @@ services:
       dockerfile: Dockerfile.admin-service
     container_name: admin-service
     depends_on:
-      postgres:
+      admin-db:
         condition: service_healthy
-      db-init:
+      admin-db-init:
         condition: service_completed_successfully
     ports:
       - "8084:8084"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/admin_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://admin-db:5432/admin_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
@@ -110,14 +242,14 @@ services:
       dockerfile: Dockerfile.worker-service
     container_name: worker-service
     depends_on:
-      postgres:
+      worker-db:
         condition: service_healthy
-      db-init:
+      worker-db-init:
         condition: service_completed_successfully
     ports:
       - "8085:8085"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/worker_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://worker-db:5432/worker_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
@@ -130,23 +262,6 @@ services:
       context: .
       dockerfile: Dockerfile.api-gateway
     container_name: api-gateway
-    depends_on:
-      customer-service:
-        condition: service_started
-      payment-service:
-        condition: service_started
-      parking-service:
-        condition: service_started
-      admin-service:
-        condition: service_started
-      worker-service:
-        condition: service_started
-      accounts-service:
-        condition: service_started
-      company-service:
-        condition: service_started
-      ocr-service:
-        condition: service_started
     ports:
       - "8090:8090"
     environment:
@@ -180,17 +295,24 @@ services:
       dockerfile: Dockerfile.accounts-service
     container_name: accounts-service
     depends_on:
-      postgres:
+      account-db:
         condition: service_healthy
-      db-init:
+      account-db-init:
         condition: service_completed_successfully
+      rabbitmq:
+        condition: service_started
     ports:
       - "8087:8087"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/account_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://account-db:5432/account_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      VERIFICATION_BASE_URL: ${VERIFICATION_BASE_URL:-http://localhost:3000}
     networks:
       - smartparking-network
 
@@ -200,14 +322,14 @@ services:
       dockerfile: Dockerfile.company-service
     container_name: company-service
     depends_on:
-      postgres:
+      company-db:
         condition: service_healthy
-      db-init:
+      company-db-init:
         condition: service_completed_successfully
     ports:
       - "8091:8091"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/company_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://company-db:5432/company_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
@@ -220,16 +342,16 @@ services:
       dockerfile: Dockerfile.ocr-service
     container_name: ocr-service
     depends_on:
-      postgres:
+      ocr-db:
         condition: service_healthy
-      db-init:
+      ocr-db-init:
         condition: service_completed_successfully
       rabbitmq:
         condition: service_started
     ports:
       - "8086:8086"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ocr_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ocr-db:5432/ocr_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       SPRING_RABBITMQ_HOST: rabbitmq
@@ -240,11 +362,37 @@ services:
     networks:
       - smartparking-network
 
-  db-init:
-    image: postgres:16
-    container_name: smartparking-db-init
+  email-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.email-service
+    container_name: email-service
     depends_on:
-      postgres:
+      rabbitmq:
+        condition: service_started
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      GMAIL_USERNAME: ${GMAIL_USERNAME:-}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8088/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - smartparking-network
+
+  customer-db-init:
+    image: postgres:16
+    container_name: customer-db-init
+    depends_on:
+      customer-db:
         condition: service_healthy
     environment:
       PGPASSWORD: ${DB_PASS:-postgres}
@@ -254,37 +402,193 @@ services:
     command:
       - |
         set -e
-        echo 'Waiting for postgres...'
-        until pg_isready -h postgres -U postgres; do sleep 1; done
-        echo 'Postgres is ready'
-        
-        echo 'Creating databases...'
-        psql -h postgres -U postgres -c "CREATE DATABASE account_db" 2>&1 || echo "account_db already exists or error"
-        psql -h postgres -U postgres -c "CREATE DATABASE company_db" 2>&1 || echo "company_db already exists or error"
-        psql -h postgres -U postgres -c "CREATE DATABASE ocr_db" 2>&1 || echo "ocr_db already exists or error"
-        psql -h postgres -U postgres -c "CREATE DATABASE customer_db" 2>&1 || echo "customer_db already exists or error"
-        psql -h postgres -U postgres -c "CREATE DATABASE payment_db" 2>&1 || echo "payment_db already exists or error"
-        psql -h postgres -U postgres -c "CREATE DATABASE parking_db" 2>&1 || echo "parking_db already exists or error"
-        psql -h postgres -U postgres -c "CREATE DATABASE admin_db" 2>&1 || echo "admin_db already exists or error"
-        psql -h postgres -U postgres -c "CREATE DATABASE worker_db" 2>&1 || echo "worker_db already exists or error"
-        
-        echo 'Importing SQL schemas...'
-        psql -h postgres -U postgres -d account_db -f /sql/account_db.sql 2>&1 || echo "Error importing account_db.sql"
-        psql -h postgres -U postgres -d company_db -f /sql/company_db.sql 2>&1 || echo "Error importing company_db.sql"
-        psql -h postgres -U postgres -d ocr_db -f /sql/ocr_db.sql 2>&1 || echo "Error importing ocr_db.sql"
-        psql -h postgres -U postgres -d customer_db -f /sql/customer_db.sql 2>&1 || echo "Error importing customer_db.sql"
-        psql -h postgres -U postgres -d payment_db -f /sql/payment_db.sql 2>&1 || echo "Error importing payment_db.sql"
-        psql -h postgres -U postgres -d parking_db -f /sql/parking_db.sql 2>&1 || echo "Error importing parking_db.sql"
-        psql -h postgres -U postgres -d admin_db -f /sql/admin_db.sql 2>&1 || echo "Error importing admin_db.sql"
-        psql -h postgres -U postgres -d worker_db -f /sql/worker_db.sql 2>&1 || echo "Error importing worker_db.sql"
-        
-        echo 'Database initialization completed'
+        echo 'Waiting for customer-db...'
+        until pg_isready -h customer-db -U postgres; do sleep 1; done
+        echo 'Customer-db is ready'
+        echo 'Importing customer_db.sql...'
+        psql -h customer-db -U postgres -d customer_db -f /sql/customer_db.sql 2>&1 || echo "Error importing customer_db.sql"
+        echo 'Customer database initialization completed'
+    networks:
+      - smartparking-network
+    restart: "no"
+
+  payment-db-init:
+    image: postgres:16
+    container_name: payment-db-init
+    depends_on:
+      payment-db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - ./database:/sql
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        echo 'Waiting for payment-db...'
+        until pg_isready -h payment-db -U postgres; do sleep 1; done
+        echo 'Payment-db is ready'
+        echo 'Importing payment_db.sql...'
+        psql -h payment-db -U postgres -d payment_db -f /sql/payment_db.sql 2>&1 || echo "Error importing payment_db.sql"
+        echo 'Payment database initialization completed'
+    networks:
+      - smartparking-network
+    restart: "no"
+
+  parking-db-init:
+    image: postgres:16
+    container_name: parking-db-init
+    depends_on:
+      parking-db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - ./database:/sql
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        echo 'Waiting for parking-db...'
+        until pg_isready -h parking-db -U postgres; do sleep 1; done
+        echo 'Parking-db is ready'
+        echo 'Importing parking_db.sql...'
+        psql -h parking-db -U postgres -d parking_db -f /sql/parking_db.sql 2>&1 || echo "Error importing parking_db.sql"
+        echo 'Parking database initialization completed'
+    networks:
+      - smartparking-network
+    restart: "no"
+
+  admin-db-init:
+    image: postgres:16
+    container_name: admin-db-init
+    depends_on:
+      admin-db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - ./database:/sql
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        echo 'Waiting for admin-db...'
+        until pg_isready -h admin-db -U postgres; do sleep 1; done
+        echo 'Admin-db is ready'
+        echo 'Importing admin_db.sql...'
+        psql -h admin-db -U postgres -d admin_db -f /sql/admin_db.sql 2>&1 || echo "Error importing admin_db.sql"
+        echo 'Admin database initialization completed'
+    networks:
+      - smartparking-network
+    restart: "no"
+
+  worker-db-init:
+    image: postgres:16
+    container_name: worker-db-init
+    depends_on:
+      worker-db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - ./database:/sql
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        echo 'Waiting for worker-db...'
+        until pg_isready -h worker-db -U postgres; do sleep 1; done
+        echo 'Worker-db is ready'
+        echo 'Importing worker_db.sql...'
+        psql -h worker-db -U postgres -d worker_db -f /sql/worker_db.sql 2>&1 || echo "Error importing worker_db.sql"
+        echo 'Worker database initialization completed'
+    networks:
+      - smartparking-network
+    restart: "no"
+
+  account-db-init:
+    image: postgres:16
+    container_name: account-db-init
+    depends_on:
+      account-db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - ./database:/sql
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        echo 'Waiting for account-db...'
+        until pg_isready -h account-db -U postgres; do sleep 1; done
+        echo 'Account-db is ready'
+        echo 'Importing account_db.sql...'
+        psql -h account-db -U postgres -d account_db -f /sql/account_db.sql 2>&1 || echo "Error importing account_db.sql"
+        echo 'Account database initialization completed'
+    networks:
+      - smartparking-network
+    restart: "no"
+
+  company-db-init:
+    image: postgres:16
+    container_name: company-db-init
+    depends_on:
+      company-db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - ./database:/sql
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        echo 'Waiting for company-db...'
+        until pg_isready -h company-db -U postgres; do sleep 1; done
+        echo 'Company-db is ready'
+        echo 'Importing company_db.sql...'
+        psql -h company-db -U postgres -d company_db -f /sql/company_db.sql 2>&1 || echo "Error importing company_db.sql"
+        echo 'Company database initialization completed'
+    networks:
+      - smartparking-network
+    restart: "no"
+
+  ocr-db-init:
+    image: postgres:16
+    container_name: ocr-db-init
+    depends_on:
+      ocr-db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - ./database:/sql
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        echo 'Waiting for ocr-db...'
+        until pg_isready -h ocr-db -U postgres; do sleep 1; done
+        echo 'OCR-db is ready'
+        echo 'Importing ocr_db.sql...'
+        psql -h ocr-db -U postgres -d ocr_db -f /sql/ocr_db.sql 2>&1 || echo "Error importing ocr_db.sql"
+        echo 'OCR database initialization completed'
     networks:
       - smartparking-network
     restart: "no"
 
 volumes:
-  postgres_data:
+  customer_db_data:
+  payment_db_data:
+  parking_db_data:
+  admin_db_data:
+  worker_db_data:
+  account_db_data:
+  company_db_data:
+  ocr_db_data:
 
 networks:
   smartparking-network:

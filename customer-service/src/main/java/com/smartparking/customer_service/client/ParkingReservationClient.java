@@ -40,24 +40,28 @@ public class ParkingReservationClient {
     }
 
     public long createReservation(Long accountId, Long parkingId, Long spotId, Instant validUntil, String status) {
-        String url = baseUrl + "/parking/reservations?accountId={accountId}&parkingId={parkingId}&spotId={spotId}&validUntil={validUntil}&status={status}";
-        ResponseEntity<IdResponse> response = restTemplate.postForEntity(
-                url,
-                null,
-                IdResponse.class,
-                Map.of(
-                        "accountId", accountId,
-                        "parkingId", parkingId,
-                        "spotId", spotId,
-                        "validUntil", validUntil.toString(),
-                        "status", status
-                )
-        );
-        IdResponse body = response.getBody();
-        if (body == null) {
-            throw new IllegalStateException("Parking-service did not return reservation id");
+        try {
+            String url = baseUrl + "/parking/reservations?accountId={accountId}&parkingId={parkingId}&spotId={spotId}&validUntil={validUntil}&status={status}";
+            ResponseEntity<IdResponse> response = restTemplate.postForEntity(
+                    url,
+                    null,
+                    IdResponse.class,
+                    Map.of(
+                            "accountId", accountId,
+                            "parkingId", parkingId,
+                            "spotId", spotId,
+                            "validUntil", validUntil.toString(),
+                            "status", status
+                    )
+            );
+            IdResponse body = response.getBody();
+            if (body == null) {
+                throw new IllegalStateException("Parking-service did not return reservation id");
+            }
+            return body.getId();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create reservation in parking-service: " + e.getMessage(), e);
         }
-        return body.getId();
     }
 }
 
