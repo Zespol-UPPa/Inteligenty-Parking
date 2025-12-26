@@ -84,6 +84,7 @@ public class JdbcAccountRepository implements AccountRepository {
                     account.getRole(),
                     account.getActive()
             );
+            account.setId(id);
         } else {
             jdbc.update(
                     "UPDATE account SET email = ?, password_hash = ?, role_account = ?, is_active = ? " +

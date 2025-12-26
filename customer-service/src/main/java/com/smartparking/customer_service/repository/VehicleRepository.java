@@ -10,4 +10,5 @@ public interface VehicleRepository {
     List<Vehicle> findAll();
     List<Vehicle> findUnassigned();
     Vehicle save(Vehicle vehicle);
+    boolean deleteById(Long id);
 }

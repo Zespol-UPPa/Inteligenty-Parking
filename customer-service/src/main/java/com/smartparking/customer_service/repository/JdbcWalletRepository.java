@@ -1,21 +1,27 @@
 package com.smartparking.customer_service.repository;
 
+import com.smartparking.customer_service.model.Customer;
 import com.smartparking.customer_service.model.Wallet;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
 public class JdbcWalletRepository implements WalletRepository{
     private final JdbcTemplate jdbc;
+    private final CustomerRepository customerRepository;
 
-    public JdbcWalletRepository(JdbcTemplate jdbc) {
+    public JdbcWalletRepository(JdbcTemplate jdbc, CustomerRepository customerRepository) {
         this.jdbc = jdbc;
+        this.customerRepository = customerRepository;
     }
 
     private final RowMapper<Wallet> mapper = new RowMapper<>() {
@@ -85,6 +91,47 @@ public class JdbcWalletRepository implements WalletRepository{
             );
             return wallet;
         }
+    }
+
+    @Override
+    public Optional<Map<String, Object>> findByAccountId(Long accountId) {
+        // accountId refers to ref_account_id in customer table
+        // First find customer by ref_account_id, then find wallet by customer_id
+        Optional<Customer> customerOpt = customerRepository.findByAccountId(accountId);
+        if (customerOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        Customer customer = customerOpt.get();
+        Optional<Wallet> walletOpt = findByCustomerId(customer.getId());
+        if (walletOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        Wallet wallet = walletOpt.get();
+        Map<String, Object> map = new HashMap<>();
+        map.put("wallet_id", wallet.getId());
+        map.put("balance_minor", wallet.getBalanceMinor() != null ? wallet.getBalanceMinor() : BigDecimal.ZERO);
+        map.put("currency_code", wallet.getCurrencyCode() != null ? wallet.getCurrencyCode() : "PLN");
+        map.put("customer_id", wallet.getCustomerId());
+        return Optional.of(map);
+    }
+
+    @Override
+    public int updateBalanceByAccountId(Long accountId, BigDecimal newBalance) {
+        // accountId refers to ref_account_id in customer table
+        // First find customer by ref_account_id, then find wallet by customer_id
+        Optional<Customer> customerOpt = customerRepository.findByAccountId(accountId);
+        if (customerOpt.isEmpty()) {
+            return 0;
+        }
+        Customer customer = customerOpt.get();
+        Optional<Wallet> walletOpt = findByCustomerId(customer.getId());
+        if (walletOpt.isEmpty()) {
+            return 0;
+        }
+        Wallet wallet = walletOpt.get();
+        wallet.setBalanceMinor(newBalance);
+        save(wallet);
+        return 1;
     }
 }
 

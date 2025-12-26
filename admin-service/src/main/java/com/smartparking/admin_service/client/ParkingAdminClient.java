@@ -23,50 +23,62 @@ public class ParkingAdminClient {
     }
 
     public long createLocation(String name, String address, Long companyId) {
-        String url = baseUrl + "/parking/admin/locations?name={name}&address={address}&companyId={companyId}";
-        ResponseEntity<IdResponse> response = restTemplate.postForEntity(
-                url,
-                null,
-                IdResponse.class,
-                Map.of("name", name, "address", address, "companyId", companyId)
-        );
-        IdResponse body = response.getBody();
-        if (body == null) {
-            throw new IllegalStateException("Parking-service did not return location id");
+        try {
+            String url = baseUrl + "/parking/admin/locations?name={name}&address={address}&companyId={companyId}";
+            ResponseEntity<IdResponse> response = restTemplate.postForEntity(
+                    url,
+                    null,
+                    IdResponse.class,
+                    Map.of("name", name, "address", address, "companyId", companyId)
+            );
+            IdResponse body = response.getBody();
+            if (body == null) {
+                throw new IllegalStateException("Parking-service did not return location id");
+            }
+            return body.getId();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create location in parking-service: " + e.getMessage(), e);
         }
-        return body.getId();
     }
 
     public long createSpot(Long locationId, String code, Integer floorLvl, boolean toReserved, String type) {
-        String url = baseUrl + "/parking/admin/spots?locationId={locationId}&code={code}&floorLvl={floorLvl}&toReserved={toReserved}&type={type}";
-        ResponseEntity<IdResponse> response = restTemplate.postForEntity(
-                url,
-                null,
-                IdResponse.class,
-                Map.of(
-                        "locationId", locationId,
-                        "code", code,
-                        "floorLvl", floorLvl,
-                        "toReserved", toReserved,
-                        "type", type
-                )
-        );
-        IdResponse body = response.getBody();
-        if (body == null) {
-            throw new IllegalStateException("Parking-service did not return spot id");
+        try {
+            String url = baseUrl + "/parking/admin/spots?locationId={locationId}&code={code}&floorLvl={floorLvl}&toReserved={toReserved}&type={type}";
+            ResponseEntity<IdResponse> response = restTemplate.postForEntity(
+                    url,
+                    null,
+                    IdResponse.class,
+                    Map.of(
+                            "locationId", locationId,
+                            "code", code,
+                            "floorLvl", floorLvl,
+                            "toReserved", toReserved,
+                            "type", type
+                    )
+            );
+            IdResponse body = response.getBody();
+            if (body == null) {
+                throw new IllegalStateException("Parking-service did not return spot id");
+            }
+            return body.getId();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create spot in parking-service: " + e.getMessage(), e);
         }
-        return body.getId();
     }
 
     public List<ParkingUsageDto> usageReport() {
-        String url = baseUrl + "/parking/admin/reports/usage";
-        ResponseEntity<ParkingUsageDto[]> response =
-                restTemplate.getForEntity(url, ParkingUsageDto[].class);
-        ParkingUsageDto[] body = response.getBody();
-        if (body == null) {
+        try {
+            String url = baseUrl + "/parking/admin/reports/usage";
+            ResponseEntity<ParkingUsageDto[]> response =
+                    restTemplate.getForEntity(url, ParkingUsageDto[].class);
+            ParkingUsageDto[] body = response.getBody();
+            if (body == null) {
+                return List.of();
+            }
+            return List.of(body);
+        } catch (Exception e) {
             return List.of();
         }
-        return List.of(body);
     }
 }
 

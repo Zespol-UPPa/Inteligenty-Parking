@@ -23,6 +23,7 @@
         <module>accounts-service</module>
         <module>company-service</module>
         <module>ocr-service</module>
+        <module>email-service</module>
     </modules>
 
     <properties>

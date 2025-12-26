@@ -25,7 +25,8 @@ public class SecurityConfig {
                         .requestMatchers("/customer/health", "/payment/health", "/ocr/health", "/company/health", "/accounts/health", "/parking/health", "/admin/health", "/worker/health").permitAll()
                         // OCR webhook public (external system integration)
                         .requestMatchers("/ocr/event", "/api/ocr/event").permitAll()
-                        .requestMatchers("/auth/**", "/actuator/**").permitAll()
+                        // Auth endpoints (registration, login, verification) - public
+                        .requestMatchers("/auth/**", "/api/auth/**", "/actuator/**").permitAll()
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )

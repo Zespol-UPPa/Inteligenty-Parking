@@ -4,3 +4,13 @@ server:
 jwt:
   secret: ${JWT_SECRET:change-me-to-a-strong-secret-key-of-at-least-32-chars}
 
+spring:
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+
+verification:
+  base-url: ${VERIFICATION_BASE_URL:http://localhost:3000}
+

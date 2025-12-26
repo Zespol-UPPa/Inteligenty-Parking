@@ -32,7 +32,7 @@ public class ProxyController {
 
     }
 
-    @RequestMapping(value = {"/payment/**", "/parking/**", "/admin/**", "/worker/**", "/accounts/**", "/company/**", "/ocr/**"},
+    @RequestMapping(value = {"/payment/**", "/parking/**", "/admin/**", "/worker/**", "/accounts/**", "/company/**", "/ocr/**", "/api/auth/**"},
             method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH})
     public ResponseEntity<byte[]> proxyOther(HttpMethod method,
                                              HttpServletRequest request,

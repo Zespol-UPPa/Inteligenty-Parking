@@ -101,4 +101,10 @@ public class JdbcVehicleRepository implements VehicleRepository{
             return vehicle;
         }
     }
+
+    @Override
+    public boolean deleteById(Long id) {
+        int deleted = jdbc.update("DELETE FROM vehicle WHERE vehicle_id = ?", id);
+        return deleted > 0;
+    }
 }

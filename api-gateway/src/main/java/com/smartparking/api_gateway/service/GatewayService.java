@@ -54,6 +54,18 @@ public class GatewayService {
                 return downstreamClient.exchange(method, target, body, headers);
             }
 
+            // Allow anonymous auth endpoints (registration, login, verification)
+            if (incomingPath != null && (incomingPath.startsWith("/api/auth/") || incomingPath.startsWith("/auth/"))) {
+                String base = routeResolver.resolveBaseUrl(Role.USER, incomingPath);
+                if (base == null) {
+                    log.warn("No route resolved for auth path={}", incomingPath);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                }
+                String target = base + incomingPath + (query == null || query.isBlank() ? "" : "?" + query);
+                log.info("Forwarding anonymous auth request incomingPath={} -> target={}", incomingPath, target);
+                return downstreamClient.exchange(method, target, body, headers);
+            }
+
             // Payment charge requires authentication - removed anonymous access for security
 
             if (jwt == null) {
