@@ -1,6 +1,7 @@
 package com.smartparking.parking_service.service;
 
 import com.smartparking.parking_service.repository.ParkingRepository;
+import com.smartparking.parking_service.repository.ParkingPricingRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -10,8 +11,11 @@ import com.smartparking.parking_service.dto.ParkingUsageDto;
 @Service
 public class ParkingQueryService {
     private final ParkingRepository repo;
-    public ParkingQueryService(ParkingRepository repo) {
+    private final ParkingPricingRepository pricingRepo;
+    
+    public ParkingQueryService(ParkingRepository repo, ParkingPricingRepository pricingRepo) {
         this.repo = repo;
+        this.pricingRepo = pricingRepo;
     }
 
     public List<Map<String, Object>> getLocations() {
@@ -20,6 +24,10 @@ public class ParkingQueryService {
 
     public List<Map<String, Object>> getSpots(Long locationId) {
         return repo.listSpots(locationId);
+    }
+
+    public List<Map<String, Object>> getSpotsForReservation(Long locationId) {
+        return repo.listSpotsForReservation(locationId);
     }
 
     public long createLocation(String name, String address, Long companyId) {
@@ -45,6 +53,19 @@ public class ParkingQueryService {
 
     public List<Map<String, Object>> getActiveReservations() {
         return repo.findActiveReservations();
+    }
+
+    public java.util.Optional<Map<String, Object>> getLocationDetails(Long locationId) {
+        return repo.getLocationDetails(locationId);
+    }
+
+    public Map<String, Object> getOccupancyData(Long locationId, Integer dayOfWeek) {
+        return repo.getOccupancyData(locationId, dayOfWeek);
+    }
+
+    public java.util.Optional<Integer> getReservationFee(Long parkingId) {
+        return pricingRepo.findByParkingId(parkingId)
+                .map(pricing -> pricing.getReservationFeeMinor());
     }
 }
 

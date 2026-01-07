@@ -104,6 +104,19 @@ public class JdbcParkingSessionRepository implements ParkingSessionRepository {
     }
 
     @Override
+    public Optional<ParkingSession> findActiveSessionByVehicleAndParking(Long vehicleId, Long parkingId) {
+        var list = jdbc.query(
+                "SELECT session_id , entry_time, exit_time, price_total_minor, payment_status,parking_id, spot_id, ref_vehicle_id, " +
+                        " ref_account_id FROM parking_session " +
+                        "WHERE ref_vehicle_id = ? AND parking_id = ? AND exit_time IS NULL " +
+                        "ORDER BY entry_time DESC LIMIT 1",
+                mapper,
+                vehicleId, parkingId
+        );
+        return list.stream().findFirst();
+    }
+
+    @Override
     public Long countActiveSessionsByParkingId(Long parkingId) {
         return jdbc.queryForObject(
                 "SELECT COUNT(*) FROM parking_session " +

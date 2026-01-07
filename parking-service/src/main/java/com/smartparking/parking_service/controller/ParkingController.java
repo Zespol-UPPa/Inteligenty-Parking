@@ -33,6 +33,12 @@ public class ParkingController {
         return ResponseEntity.ok(queries.getSpots(locationId));
     }
 
+    @GetMapping("/spots/for-reservation")
+    public ResponseEntity<List<Map<String, Object>>> listSpotsForReservation(
+            @RequestParam Long locationId) {
+        return ResponseEntity.ok(queries.getSpotsForReservation(locationId));
+    }
+
     // Admin-facing endpoints, wywoływane przez admin-service (nie bezpośrednio z frontu)
     @PostMapping("/admin/locations")
     public ResponseEntity<IdResponse> createLocation(@RequestParam String name,
@@ -78,6 +84,30 @@ public class ParkingController {
     @GetMapping("/reservations/active")
     public ResponseEntity<List<Map<String, Object>>> getActiveReservations() {
         return ResponseEntity.ok(queries.getActiveReservations());
+    }
+
+    // Customer-facing endpoints for parking details
+    @GetMapping("/locations/{id}/details")
+    public ResponseEntity<?> getLocationDetails(@PathVariable Long id) {
+        java.util.Optional<Map<String, Object>> details = queries.getLocationDetails(id);
+        return details.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/locations/{id}/occupancy")
+    public ResponseEntity<Map<String, Object>> getOccupancyData(
+            @PathVariable Long id,
+            @RequestParam(required = false) Integer dayOfWeek) {
+        // dayOfWeek: 0=Sunday, 1=Monday, ..., 6=Saturday
+        // Jeśli nie podano, użyj aktualnego dnia tygodnia
+        return ResponseEntity.ok(queries.getOccupancyData(id, dayOfWeek));
+    }
+
+    @GetMapping("/pricing/{parkingId}/reservation-fee")
+    public ResponseEntity<?> getReservationFee(@PathVariable Long parkingId) {
+        java.util.Optional<Integer> feeOpt = queries.getReservationFee(parkingId);
+        return feeOpt.map(fee -> ResponseEntity.ok(Map.of("reservationFeeMinor", fee)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
 

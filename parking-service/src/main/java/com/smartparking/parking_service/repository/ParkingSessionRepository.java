@@ -19,6 +19,8 @@ public interface ParkingSessionRepository {
 
     public List<ParkingSession> findActiveSession();
 
+    Optional<ParkingSession> findActiveSessionByVehicleAndParking(Long vehicleId, Long parkingId);
+
     Long countActiveSessionsByParkingId(Long parkingId);
 
     ParkingSession save(ParkingSession session);
