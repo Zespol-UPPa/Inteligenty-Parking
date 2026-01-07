@@ -8,6 +8,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
 public class SecurityConfig {
@@ -16,9 +21,22 @@ public class SecurityConfig {
         this.jwtAuthFilter = jwtAuthFilter;
     }
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(Arrays.asList("*")); // Pozwala na "*" z credentials
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // explicit public health endpoints
@@ -27,6 +45,8 @@ public class SecurityConfig {
                         .requestMatchers("/ocr/event", "/api/ocr/event").permitAll()
                         // Auth endpoints (registration, login, verification) - public
                         .requestMatchers("/auth/**", "/api/auth/**", "/actuator/**").permitAll()
+                        // Public parking endpoints (locations, spots, details, occupancy, pricing)
+                        .requestMatchers("/parking/locations", "/parking/spots", "/parking/locations/*/details", "/parking/locations/*/occupancy", "/parking/pricing/*/reservation-fee").permitAll()
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )

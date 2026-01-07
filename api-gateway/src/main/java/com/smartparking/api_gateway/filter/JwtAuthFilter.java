@@ -35,6 +35,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (path.startsWith("/auth") || path.startsWith("/api/auth") || path.startsWith("/actuator")) return true;
         // Allow any health endpoint (e.g. /health or /payment/health, /customer/health)
         if (path.equals("/health") || path.endsWith("/health")) return true;
+        // Allow public parking endpoints (locations, spots, details, occupancy, pricing)
+        if (path.equals("/parking/locations") || path.equals("/parking/spots")) return true;
+        if (path.startsWith("/parking/locations/") && (path.endsWith("/details") || path.endsWith("/occupancy"))) return true;
+        if (path.startsWith("/parking/pricing/") && path.endsWith("/reservation-fee")) return true;
         return false;
     }
 
@@ -42,14 +46,33 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
 
+        // Try to get token from Authorization header first (for backward compatibility)
         String auth = req.getHeader("Authorization");
-        if (auth == null || !auth.startsWith("Bearer ")) {
+        String token = null;
+        
+        if (auth != null && auth.startsWith("Bearer ")) {
+            token = auth.substring(7);
+        } else {
+            // Try to get token from cookie (fallback for cookie-based auth)
+            jakarta.servlet.http.Cookie[] cookies = req.getCookies();
+            if (cookies != null) {
+                for (jakarta.servlet.http.Cookie cookie : cookies) {
+                    if ("authToken".equals(cookie.getName())) {
+                        token = cookie.getValue();
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (token == null || token.isBlank()) {
             res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
         try {
-            JwtData data = jwtUtil.validateToken(auth);
+            // JwtUtil.validateToken expects "Bearer " prefix
+            JwtData data = jwtUtil.validateToken("Bearer " + token);
             req.setAttribute(ATTR_JWT, data);
 
             // 🔹 Tworzymy listę ról (Spring wymaga prefiksu ROLE_)
