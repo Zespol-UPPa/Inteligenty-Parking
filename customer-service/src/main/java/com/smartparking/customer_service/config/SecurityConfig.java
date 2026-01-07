@@ -15,7 +15,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
-                        .requestMatchers("/customer/health", "/internal/wallet/**").permitAll()
+                        .requestMatchers("/customer/health", "/internal/wallet/**", "/customer/internal/**", "/internal/vehicles/**").permitAll()
                         // All other endpoints require JWT (handled by JwtContextFilter)
                         .anyRequest().permitAll() // JwtContextFilter will handle authentication
                 );

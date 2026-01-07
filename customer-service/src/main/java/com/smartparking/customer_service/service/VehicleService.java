@@ -55,6 +55,24 @@ public class VehicleService {
         return vehicles.save(v).getId();
     }
     
+    public boolean update(Long vehicleId, Long accountId, String licencePlate) {
+        // Verify vehicle belongs to account before updating
+        // accountId refers to ref_account_id in customer table
+        Optional<Customer> customerOpt = customerRepository.findByAccountId(accountId);
+        if (customerOpt.isEmpty()) {
+            return false;
+        }
+        Customer customer = customerOpt.get();
+        Optional<Vehicle> vehicleOpt = vehicles.findById(vehicleId);
+        if (vehicleOpt.isEmpty() || !vehicleOpt.get().getCustomerId().equals(customer.getId())) {
+            return false;
+        }
+        Vehicle vehicle = vehicleOpt.get();
+        vehicle.setLicencePlate(licencePlate);
+        vehicles.save(vehicle);
+        return true;
+    }
+    
     public boolean delete(Long vehicleId, Long accountId) {
         // Verify vehicle belongs to account before deleting
         // accountId refers to ref_account_id in customer table

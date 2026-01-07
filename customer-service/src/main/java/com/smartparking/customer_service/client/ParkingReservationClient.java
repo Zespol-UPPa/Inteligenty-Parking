@@ -11,6 +11,7 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class ParkingReservationClient {
@@ -61,6 +62,46 @@ public class ParkingReservationClient {
             return body.getId();
         } catch (Exception e) {
             throw new IllegalStateException("Failed to create reservation in parking-service: " + e.getMessage(), e);
+        }
+    }
+
+    public Optional<Map<String, Object>> getLocationDetails(Long parkingId) {
+        try {
+            String url = baseUrl + "/parking/locations/{parkingId}/details";
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<Map<String, Object>>() {},
+                    Map.of("parkingId", parkingId)
+            );
+            return Optional.ofNullable(response.getBody());
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<Integer> getReservationFee(Long parkingId) {
+        try {
+            String url = baseUrl + "/parking/pricing/{parkingId}/reservation-fee";
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<Map<String, Object>>() {},
+                    Map.of("parkingId", parkingId)
+            );
+            if (response.getBody() != null && response.getBody().containsKey("reservationFeeMinor")) {
+                Object feeObj = response.getBody().get("reservationFeeMinor");
+                if (feeObj instanceof Integer) {
+                    return Optional.of((Integer) feeObj);
+                } else if (feeObj instanceof Number) {
+                    return Optional.of(((Number) feeObj).intValue());
+                }
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            return Optional.empty();
         }
     }
 }
