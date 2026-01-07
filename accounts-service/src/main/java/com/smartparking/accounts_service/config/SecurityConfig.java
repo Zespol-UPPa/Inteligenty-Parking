@@ -16,6 +16,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/auth/**", "/accounts/health").permitAll()
+                // Internal service-to-service endpoints (for customer-service)
+                .requestMatchers("/accounts/*/email", "/accounts/*/password", "/accounts/*").permitAll()
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             );

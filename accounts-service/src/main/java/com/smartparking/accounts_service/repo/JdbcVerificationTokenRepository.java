@@ -108,5 +108,13 @@ public class JdbcVerificationTokenRepository implements VerificationTokenReposit
                 tokenId
         );
     }
+
+    @Override
+    public void deleteByAccountId(Long accountId) {
+        jdbc.update(
+                "DELETE FROM verification_token WHERE account_id = ?",
+                accountId
+        );
+    }
 }
 

@@ -12,5 +12,6 @@ spring:
     password: ${SPRING_RABBITMQ_PASSWORD:guest}
 
 verification:
-  base-url: ${VERIFICATION_BASE_URL:http://localhost:3000}
+  # Frontend runs on port 5500, so verification links should point there
+  base-url: ${VERIFICATION_BASE_URL:http://localhost:5500}
 

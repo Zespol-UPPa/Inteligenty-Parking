@@ -11,5 +11,6 @@ public interface VerificationTokenRepository {
     List<VerificationToken> findByAccountId(Long accountId);
     void deleteExpired();
     void markAsUsed(Long tokenId);
+    void deleteByAccountId(Long accountId);
 }
 
