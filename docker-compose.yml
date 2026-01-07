@@ -161,6 +161,8 @@ services:
         condition: service_healthy
       customer-db-init:
         condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "8081:8081"
     environment:
@@ -170,6 +172,11 @@ services:
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-}
       PARKING_SERVICE_URL: http://parking-service:8083
+      PAYMENT_SERVICE_URL: http://payment-service:8082
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
     networks:
       - smartparking-network
 
@@ -205,6 +212,8 @@ services:
         condition: service_healthy
       parking-db-init:
         condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "8083:8083"
     environment:
@@ -212,6 +221,14 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-postgres}
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-}
+      CUSTOMER_SERVICE_URL: http://customer-service:8081
+      PAYMENT_SERVICE_URL: http://payment-service:8082
+      ACCOUNTS_SERVICE_URL: http://accounts-service:8087
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
     networks:
       - smartparking-network
 
@@ -286,6 +303,15 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_ERLANG_COOKIE: SWQOKODSQALRPCLNMEQG
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
     networks:
       - smartparking-network
 
@@ -397,7 +423,7 @@ services:
     environment:
       PGPASSWORD: ${DB_PASS:-postgres}
     volumes:
-      - ./database:/sql
+      - ./database-test:/sql
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -421,7 +447,7 @@ services:
     environment:
       PGPASSWORD: ${DB_PASS:-postgres}
     volumes:
-      - ./database:/sql
+      - ./database-test:/sql
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -445,7 +471,7 @@ services:
     environment:
       PGPASSWORD: ${DB_PASS:-postgres}
     volumes:
-      - ./database:/sql
+      - ./database-test:/sql
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -469,7 +495,7 @@ services:
     environment:
       PGPASSWORD: ${DB_PASS:-postgres}
     volumes:
-      - ./database:/sql
+      - ./database-test:/sql
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -493,7 +519,7 @@ services:
     environment:
       PGPASSWORD: ${DB_PASS:-postgres}
     volumes:
-      - ./database:/sql
+      - ./database-test:/sql
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -517,7 +543,7 @@ services:
     environment:
       PGPASSWORD: ${DB_PASS:-postgres}
     volumes:
-      - ./database:/sql
+      - ./database-test:/sql
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -541,7 +567,7 @@ services:
     environment:
       PGPASSWORD: ${DB_PASS:-postgres}
     volumes:
-      - ./database:/sql
+      - ./database-test:/sql
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -565,7 +591,7 @@ services:
     environment:
       PGPASSWORD: ${DB_PASS:-postgres}
     volumes:
-      - ./database:/sql
+      - ./database-test:/sql
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -589,6 +615,7 @@ volumes:
   account_db_data:
   company_db_data:
   ocr_db_data:
+  rabbitmq_data:
 
 networks:
   smartparking-network:

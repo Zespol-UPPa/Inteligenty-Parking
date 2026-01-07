@@ -2,6 +2,8 @@ package com.smartparking.accounts_service.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +14,7 @@ import java.util.Date;
 
 @Component
 public class JwtUtil {
+    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
     private final Key key;
     private final long ttlMs = 24 * 3600 * 1000L;
 
@@ -27,10 +30,41 @@ public class JwtUtil {
         this.key = Keys.hmacShaKeyFor(bytes);
     }
 
+    /**
+     * Normalizes role string to uppercase format expected by API Gateway.
+     * Maps database role format ("User", "Worker", "Admin") to JWT format ("USER", "WORKER", "ADMIN").
+     * 
+     * @param role Role from database (e.g., "User", "Worker", "Admin")
+     * @return Normalized role in uppercase format (e.g., "USER", "WORKER", "ADMIN")
+     */
+    private String normalizeRole(String role) {
+        if (role == null || role.isBlank()) {
+            log.warn("Role is null or empty, defaulting to USER");
+            return "USER";
+        }
+        
+        // Case-insensitive matching and conversion to uppercase
+        String roleUpper = role.trim().toUpperCase();
+        
+        // Map known roles - case-insensitive matching
+        switch (roleUpper) {
+            case "USER":
+                return "USER";
+            case "WORKER":
+                return "WORKER";
+            case "ADMIN":
+                return "ADMIN";
+            default:
+                log.warn("Unknown role '{}', defaulting to USER", role);
+                return "USER";
+        }
+    }
+
     public String generateToken(String subject, String role) {
+        String normalizedRole = normalizeRole(role);
         return Jwts.builder()
                 .setSubject(subject)
-                .claim("role", role)
+                .claim("role", normalizedRole)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + ttlMs))
                 .signWith(key, SignatureAlgorithm.HS256)

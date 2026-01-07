@@ -8,6 +8,11 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/parking_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
 
 jwt:
   secret: ${JWT_SECRET:change-me-to-a-strong-secret-key-of-at-least-32-chars}

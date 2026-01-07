@@ -33,9 +33,27 @@ public class JwtContextFilter implements Filter {
             return;
         }
         
+        // Try to get token from Authorization header first
+        String token = null;
         if (auth != null && auth.startsWith("Bearer ")) {
+            token = auth.substring(7);
+        } else {
+            // Try to get token from cookie (fallback for cookie-based auth)
+            jakarta.servlet.http.Cookie[] cookies = http.getCookies();
+            if (cookies != null) {
+                for (jakarta.servlet.http.Cookie cookie : cookies) {
+                    if ("authToken".equals(cookie.getName())) {
+                        token = cookie.getValue();
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (token != null && !token.isBlank()) {
             try {
-                JwtData data = jwtUtil.validateToken(auth);
+                // JwtUtil.validateToken expects "Bearer " prefix
+                JwtData data = jwtUtil.validateToken("Bearer " + token);
                 request.setAttribute(ATTR_CONTEXT, new RequestContext(data.getSubject(), data.getRole()));
                 log.debug("JWT validated for path: {}, subject: {}, role: {}", path, data.getSubject(), data.getRole());
             } catch (JwtException | IllegalArgumentException e) {
@@ -45,8 +63,8 @@ public class JwtContextFilter implements Filter {
                 return;
             }
         } else {
-            // No Authorization header - this is OK for health endpoints, but for others it will be rejected by controller
-            log.debug("No Authorization header for path: {}", path);
+            // No Authorization header or cookie - this is OK for health endpoints, but for others it will be rejected by controller
+            log.debug("No Authorization header or cookie for path: {}", path);
         }
         chain.doFilter(request, response);
     }

@@ -35,7 +35,7 @@ public class JdbcAccountRepository implements AccountRepository {
     public Optional<Account> findByUsername(String username) {
         // username w modelu = email w bazie account_db.account
         var list = jdbc.query(
-                "SELECT account_id, email, password_hash, role_account " +
+                "SELECT account_id, email, password_hash, role_account, is_active " +
                         "FROM account WHERE email = ?",
                 mapper,
                 username
@@ -77,7 +77,7 @@ public class JdbcAccountRepository implements AccountRepository {
         if (account.getId() == null) {
             Long id = jdbc.queryForObject(
                     "INSERT INTO account(email, password_hash, role_account, is_active) " +
-                            "VALUES (?, ?, ?, ?) RETURNING account_id",
+                            "VALUES (?, ?, ?::public.role_account, ?) RETURNING account_id",
                     Long.class,
                     account.getUsername(),
                     account.getPasswordHash(),
@@ -87,7 +87,7 @@ public class JdbcAccountRepository implements AccountRepository {
             account.setId(id);
         } else {
             jdbc.update(
-                    "UPDATE account SET email = ?, password_hash = ?, role_account = ?, is_active = ? " +
+                    "UPDATE account SET email = ?, password_hash = ?, role_account = ?::public.role_account, is_active = ? " +
                             "WHERE account_id = ?",
                     account.getUsername(),
                     account.getPasswordHash(),
@@ -99,7 +99,10 @@ public class JdbcAccountRepository implements AccountRepository {
         return account;
     }
 
-
+    @Override
+    public void deleteById(Long id) {
+        jdbc.update("DELETE FROM account WHERE account_id = ?", id);
+    }
 
 }
 

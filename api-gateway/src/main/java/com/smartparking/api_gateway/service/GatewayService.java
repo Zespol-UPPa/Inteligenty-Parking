@@ -66,6 +66,23 @@ public class GatewayService {
                 return downstreamClient.exchange(method, target, body, headers);
             }
 
+            // Allow anonymous parking endpoints (locations, spots, details, occupancy, pricing)
+            if (incomingPath != null && (
+                    incomingPath.equals("/parking/locations") || 
+                    incomingPath.equals("/parking/spots") ||
+                    (incomingPath.startsWith("/parking/locations/") && (incomingPath.endsWith("/details") || incomingPath.endsWith("/occupancy"))) ||
+                    (incomingPath.startsWith("/parking/pricing/") && incomingPath.endsWith("/reservation-fee"))
+            )) {
+                String base = routeResolver.resolveBaseUrl(Role.USER, incomingPath);
+                if (base == null) {
+                    log.warn("No route resolved for parking path={}", incomingPath);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                }
+                String target = base + incomingPath + (query == null || query.isBlank() ? "" : "?" + query);
+                log.info("Forwarding anonymous parking request incomingPath={} -> target={}", incomingPath, target);
+                return downstreamClient.exchange(method, target, body, headers);
+            }
+
             // Payment charge requires authentication - removed anonymous access for security
 
             if (jwt == null) {

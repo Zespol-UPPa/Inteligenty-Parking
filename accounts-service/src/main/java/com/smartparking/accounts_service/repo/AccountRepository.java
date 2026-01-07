@@ -10,4 +10,5 @@ public interface AccountRepository {
     Optional<Account> findById(Long id);
     Account deactivateById(Account account);
     Account markActiveById(Account account);
+    void deleteById(Long id);
 }

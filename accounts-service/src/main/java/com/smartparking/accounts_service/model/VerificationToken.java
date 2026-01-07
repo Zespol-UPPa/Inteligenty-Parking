@@ -72,7 +72,9 @@ public class VerificationToken {
     }
 
     public boolean isValid() {
-        return !isUsed && !isExpired();
+        boolean notUsed = isUsed == null || !isUsed;
+        boolean notExpired = !isExpired();
+        return notUsed && notExpired;
     }
 }
 

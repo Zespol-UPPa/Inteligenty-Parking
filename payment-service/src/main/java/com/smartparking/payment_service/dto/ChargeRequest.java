@@ -4,12 +4,15 @@ import java.math.BigDecimal;
 
 public class ChargeRequest {
     private Long userId;
+    private Long accountId; // For internal calls from parking-service
     private Long sessionId;
     private BigDecimal amount;
     private String currency;
 
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
+    public Long getAccountId() { return accountId; }
+    public void setAccountId(Long accountId) { this.accountId = accountId; }
     public Long getSessionId() { return sessionId; }
     public void setSessionId(Long sessionId) { this.sessionId = sessionId; }
     public BigDecimal getAmount() { return amount; }

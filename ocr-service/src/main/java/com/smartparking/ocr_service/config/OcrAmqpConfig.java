@@ -12,9 +12,17 @@ public class OcrAmqpConfig {
     public static final String OCR_EXCHANGE = "ocr.exchange";
     public static final String OCR_QUEUE = "ocr.queue";
     public static final String OCR_ROUTING = "ocr.routing";
+    
+    // Parking exchange for entry/exit events
+    public static final String PARKING_EXCHANGE = "parking.exchange";
+    public static final String PARKING_ENTRY_ROUTING = "parking.entry.detected";
+    public static final String PARKING_EXIT_ROUTING = "parking.exit.detected";
 
     @Bean
     public TopicExchange exchange() { return new TopicExchange(OCR_EXCHANGE); }
+
+    @Bean
+    public TopicExchange parkingExchange() { return new TopicExchange(PARKING_EXCHANGE); }
 
     @Bean
     public Queue queue() { return new Queue(OCR_QUEUE); }

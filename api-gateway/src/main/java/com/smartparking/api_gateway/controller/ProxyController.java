@@ -17,10 +17,13 @@ public class ProxyController {
         this.gatewayService = gatewayService;
     }
     @RequestMapping(value = "/customer/**",
-            method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH})
+            method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH, RequestMethod.OPTIONS})
     public ResponseEntity<byte[]> proxyCustomer(HttpMethod method,
                                         HttpServletRequest request,
                                         @RequestHeader HttpHeaders headers) throws IOException{
+        if (method == HttpMethod.OPTIONS) {
+            return ResponseEntity.ok().build();
+        }
         JwtData jwtData = (JwtData) request.getAttribute(JwtAuthFilter.ATTR_JWT);
         String path = request.getRequestURI();
         String query = request.getQueryString();
@@ -33,10 +36,13 @@ public class ProxyController {
     }
 
     @RequestMapping(value = {"/payment/**", "/parking/**", "/admin/**", "/worker/**", "/accounts/**", "/company/**", "/ocr/**", "/api/auth/**"},
-            method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH})
+            method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH, RequestMethod.OPTIONS})
     public ResponseEntity<byte[]> proxyOther(HttpMethod method,
                                              HttpServletRequest request,
                                              @RequestHeader HttpHeaders headers) throws IOException {
+        if (method == HttpMethod.OPTIONS) {
+            return ResponseEntity.ok().build();
+        }
         JwtData jwtData = (JwtData) request.getAttribute(JwtAuthFilter.ATTR_JWT);
         String path = request.getRequestURI();
         String query = request.getQueryString();

@@ -42,11 +42,56 @@ public class EmailVerificationListener {
     }
 
     @Recover
-    public void recover(AmqpRejectAndDontRequeueException e, EmailVerificationEvent event) {
-        log.error("Failed to send verification email to: {} after {} attempts. Message will be sent to DLQ.", 
-                event.getEmail(), MAX_RETRY_ATTEMPTS);
+    public void recover(Exception e, EmailVerificationEvent event) {
+        String errorDetails = extractErrorDetails(e);
+        log.error("================================================");
+        log.error("FAILED TO SEND VERIFICATION EMAIL AFTER {} ATTEMPTS", MAX_RETRY_ATTEMPTS);
+        log.error("Recipient: {}", event.getEmail());
+        log.error("Error type: {}", e.getClass().getSimpleName());
+        log.error("Error message: {}", e.getMessage());
+        if (errorDetails != null && !errorDetails.isEmpty()) {
+            log.error("Error details: {}", errorDetails);
+        }
+        log.error("Message will be sent to Dead Letter Queue (DLQ)");
+        log.error("Please check Gmail configuration (GMAIL_USERNAME and GMAIL_APP_PASSWORD)");
+        log.error("================================================");
         // Message will be automatically sent to DLQ due to AmqpRejectAndDontRequeueException
-        throw new AmqpRejectAndDontRequeueException("Failed to send verification email after " + MAX_RETRY_ATTEMPTS + " retries", e);
+        throw new AmqpRejectAndDontRequeueException(
+                String.format("Failed to send verification email to %s after %d retries. Error: %s", 
+                        event.getEmail(), MAX_RETRY_ATTEMPTS, errorDetails != null ? errorDetails : e.getMessage()), 
+                e);
+    }
+    
+    private String extractErrorDetails(Exception e) {
+        if (e == null) {
+            return null;
+        }
+        
+        String message = e.getMessage();
+        if (message != null) {
+            // Check for common error patterns
+            if (message.contains("Authentication failed") || message.contains("535")) {
+                return "Gmail authentication failed. Please verify GMAIL_USERNAME and GMAIL_APP_PASSWORD. " +
+                       "Make sure you are using Gmail App Password (not regular password).";
+            }
+            if (message.contains("Connection") || message.contains("timeout")) {
+                return "Connection error. Please check network connectivity and Gmail SMTP settings.";
+            }
+            if (message.contains("not configured") || message.contains("GMAIL_USERNAME")) {
+                return "Gmail configuration is missing. Please set GMAIL_USERNAME and GMAIL_APP_PASSWORD environment variables.";
+            }
+        }
+        
+        // Check cause
+        Throwable cause = e.getCause();
+        if (cause != null && cause.getMessage() != null) {
+            String causeMessage = cause.getMessage();
+            if (causeMessage.contains("535") || causeMessage.contains("Username and Password not accepted")) {
+                return "Gmail rejected credentials. Please verify GMAIL_APP_PASSWORD is correct and account has 2-Step Verification enabled.";
+            }
+        }
+        
+        return message;
     }
 }
 

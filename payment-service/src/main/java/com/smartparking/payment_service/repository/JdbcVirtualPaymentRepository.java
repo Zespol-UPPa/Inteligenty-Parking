@@ -1,6 +1,9 @@
 package com.smartparking.payment_service.repository;
 
 import com.smartparking.payment_service.model.VirtualPayment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -15,6 +18,7 @@ import java.util.Optional;
 @Repository
 public class JdbcVirtualPaymentRepository implements VirtualPaymentRepository {
 
+    private static final Logger log = LoggerFactory.getLogger(JdbcVirtualPaymentRepository.class);
     private final JdbcTemplate jdbc;
 
     public JdbcVirtualPaymentRepository(JdbcTemplate jdbc) {
@@ -64,29 +68,60 @@ public class JdbcVirtualPaymentRepository implements VirtualPaymentRepository {
             if (payment.getDateTransaction() == null)
                 payment.setDateTransaction(LocalDateTime.now());
 
-            Long id = jdbc.queryForObject(
-                    "INSERT INTO virtual_payment(" +
-                            "amount_minor, currency_code, status_paid, date_transaction, " +
-                            "ref_account_id, ref_session_id, activity" +
-                            ") VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING payment_id",
-                    Long.class,
-                    payment.getAmountMinor(),
-                    payment.getCurrencyCode(),
-                    payment.getStatusPaid(),
-                    Timestamp.valueOf(payment.getDateTransaction()),
-                    payment.getRefAccountId(),
-                    payment.getRefSessionId(),
-                    payment.getActivity()
-            );
+            try {
+                Long id = jdbc.queryForObject(
+                        "INSERT INTO virtual_payment(" +
+                                "amount_minor, currency_code, status_paid, date_transaction, " +
+                                "ref_account_id, ref_session_id, activity" +
+                                ") VALUES (?, ?, CAST(? AS public.status_paid), ?, ?, ?, CAST(? AS public.activity_type)) RETURNING payment_id",
+                        Long.class,
+                        payment.getAmountMinor(),
+                        payment.getCurrencyCode(),
+                        payment.getStatusPaid(),
+                        Timestamp.valueOf(payment.getDateTransaction()),
+                        payment.getRefAccountId(),
+                        payment.getRefSessionId(),
+                        payment.getActivity()
+                );
 
-            payment.setId(id);
-            return payment;
+                payment.setId(id);
+                return payment;
+            } catch (DuplicateKeyException e) {
+                // Sekwencja jest niezsynchronizowana - napraw ją i spróbuj ponownie
+                log.warn("Duplicate key error detected, fixing sequence: {}", e.getMessage());
+                try {
+                    jdbc.execute("SELECT setval('virtual_payment_id_payment_seq', " +
+                                "COALESCE((SELECT MAX(payment_id) FROM virtual_payment), 1), true)");
+                    log.info("Sequence fixed, retrying insert");
+                    
+                    // Spróbuj ponownie
+                    Long id = jdbc.queryForObject(
+                            "INSERT INTO virtual_payment(" +
+                                    "amount_minor, currency_code, status_paid, date_transaction, " +
+                                    "ref_account_id, ref_session_id, activity" +
+                                    ") VALUES (?, ?, CAST(? AS public.status_paid), ?, ?, ?, CAST(? AS public.activity_type)) RETURNING payment_id",
+                            Long.class,
+                            payment.getAmountMinor(),
+                            payment.getCurrencyCode(),
+                            payment.getStatusPaid(),
+                            Timestamp.valueOf(payment.getDateTransaction()),
+                            payment.getRefAccountId(),
+                            payment.getRefSessionId(),
+                            payment.getActivity()
+                    );
+                    payment.setId(id);
+                    return payment;
+                } catch (Exception retryException) {
+                    log.error("Failed to insert payment even after sequence fix", retryException);
+                    throw new RuntimeException("Failed to save payment after sequence fix", retryException);
+                }
+            }
 
         } else {
             jdbc.update(
                     "UPDATE virtual_payment SET " +
-                            "amount_minor = ?, currency_code = ?, status_paid = ?, date_transaction = ?, " +
-                            "ref_account_id = ?, ref_session_id = ?, activity = ? " +
+                            "amount_minor = ?, currency_code = ?, status_paid = CAST(? AS public.status_paid), date_transaction = ?, " +
+                            "ref_account_id = ?, ref_session_id = ?, activity = CAST(? AS public.activity_type) " +
                             "WHERE payment_id = ?",
                     payment.getAmountMinor(),
                     payment.getCurrencyCode(),
