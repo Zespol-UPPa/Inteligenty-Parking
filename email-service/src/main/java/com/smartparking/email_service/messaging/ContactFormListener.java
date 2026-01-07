@@ -1,7 +1,7 @@
 package com.smartparking.email_service.messaging;
 
 import com.smartparking.email_service.config.EmailAmqpConfig;
-import com.smartparking.email_service.dto.EmailVerificationEvent;
+import com.smartparking.email_service.dto.ContactFormEvent;
 import com.smartparking.email_service.service.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,40 +13,45 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 @Component
-public class EmailVerificationListener {
-    private static final Logger log = LoggerFactory.getLogger(EmailVerificationListener.class);
+public class ContactFormListener {
+    private static final Logger log = LoggerFactory.getLogger(ContactFormListener.class);
     private static final int MAX_RETRY_ATTEMPTS = 3;
     
     private final EmailService emailService;
 
-    public EmailVerificationListener(EmailService emailService) {
+    public ContactFormListener(EmailService emailService) {
         this.emailService = emailService;
     }
 
-    @RabbitListener(queues = EmailAmqpConfig.EMAIL_VERIFICATION_QUEUE)
+    @RabbitListener(queues = EmailAmqpConfig.EMAIL_CONTACT_QUEUE)
     @Retryable(
             maxAttempts = MAX_RETRY_ATTEMPTS,
             backoff = @Backoff(delay = 2000, multiplier = 2),
             retryFor = {Exception.class}
     )
-    public void onVerificationEmail(EmailVerificationEvent event) {
+    public void onContactForm(ContactFormEvent event) {
         // Validate event data before processing
-        if (event == null || event.getEmail() == null || event.getVerificationUrl() == null) {
-            log.error("Received invalid email verification event: {}", event);
-            throw new IllegalArgumentException("Invalid email verification event");
+        if (event == null || event.getUserEmail() == null) {
+            log.error("Received invalid contact form event: {}", event);
+            throw new IllegalArgumentException("Invalid contact form event");
         }
         
-        log.info("Received verification email request for: {} (attempt)", event.getEmail());
-        emailService.sendVerificationEmail(event.getEmail(), event.getVerificationUrl());
-        log.info("Verification email sent successfully to: {}", event.getEmail());
+        log.info("Received contact form email request from: {} (attempt)", event.getUserEmail());
+        emailService.sendContactFormEmail(
+            event.getUserEmail(),
+            event.getUserName(),
+            event.getSubject(),
+            event.getMessage()
+        );
+        log.info("Contact form email sent successfully from: {}", event.getUserEmail());
     }
 
     @Recover
-    public void recover(Exception e, EmailVerificationEvent event) {
+    public void recover(Exception e, ContactFormEvent event) {
         String errorDetails = extractErrorDetails(e);
         log.error("================================================");
-        log.error("FAILED TO SEND VERIFICATION EMAIL AFTER {} ATTEMPTS", MAX_RETRY_ATTEMPTS);
-        log.error("Recipient: {}", event.getEmail());
+        log.error("FAILED TO SEND CONTACT FORM EMAIL AFTER {} ATTEMPTS", MAX_RETRY_ATTEMPTS);
+        log.error("From: {}", event.getUserEmail());
         log.error("Error type: {}", e.getClass().getSimpleName());
         log.error("Error message: {}", e.getMessage());
         if (errorDetails != null && !errorDetails.isEmpty()) {
@@ -57,8 +62,8 @@ public class EmailVerificationListener {
         log.error("================================================");
         // Message will be automatically sent to DLQ due to AmqpRejectAndDontRequeueException
         throw new AmqpRejectAndDontRequeueException(
-                String.format("Failed to send verification email to %s after %d retries. Error: %s", 
-                        event.getEmail(), MAX_RETRY_ATTEMPTS, errorDetails != null ? errorDetails : e.getMessage()), 
+                String.format("Failed to send contact form email from %s after %d retries. Error: %s", 
+                        event.getUserEmail(), MAX_RETRY_ATTEMPTS, errorDetails != null ? errorDetails : e.getMessage()), 
                 e);
     }
     
