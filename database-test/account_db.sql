@@ -242,7 +242,7 @@ COPY public.login_code (code_id, code, account_id, is_used) FROM stdin;
 -- Name: account_account_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.account_account_id_seq', 65, true);
+SELECT pg_catalog.setval('public.account_account_id_seq', (SELECT COALESCE(MAX(account_id), 0) + 1 FROM account), false);
 
 
 --
@@ -279,6 +279,89 @@ ALTER TABLE ONLY public.login_code
 
 ALTER TABLE ONLY public.login_code
     ADD CONSTRAINT login_code_account_id_fkey FOREIGN KEY (account_id) REFERENCES public.account(account_id);
+
+--
+-- TOC entry (class 1259 OID)
+-- Name: verification_token; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.verification_token (
+    token_id integer NOT NULL,
+    token character varying(64) NOT NULL,
+    account_id integer NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    expires_at timestamp without time zone NOT NULL,
+    is_used boolean DEFAULT false NOT NULL
+);
+
+ALTER TABLE public.verification_token OWNER TO postgres;
+
+--
+-- TOC entry (class 1259 OID)
+-- Name: verification_token_token_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.verification_token_token_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.verification_token_token_id_seq OWNER TO postgres;
+
+--
+-- TOC entry
+-- Name: verification_token_token_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.verification_token_token_id_seq OWNED BY public.verification_token.token_id;
+
+--
+-- TOC entry (class 2604 OID)
+-- Name: verification_token token_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.verification_token ALTER COLUMN token_id SET DEFAULT nextval('public.verification_token_token_id_seq'::regclass);
+
+--
+-- TOC entry (class 2606 OID)
+-- Name: verification_token verification_token_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.verification_token
+    ADD CONSTRAINT verification_token_pkey PRIMARY KEY (token_id);
+
+--
+-- TOC entry (class 2606 OID)
+-- Name: verification_token verification_token_token_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.verification_token
+    ADD CONSTRAINT verification_token_token_key UNIQUE (token);
+
+--
+-- TOC entry (class 2606 OID)
+-- Name: verification_token verification_token_account_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.verification_token
+    ADD CONSTRAINT verification_token_account_id_fkey FOREIGN KEY (account_id) REFERENCES public.account(account_id);
+
+--
+-- TOC entry
+-- Name: idx_verification_token_token; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_verification_token_token ON public.verification_token(token);
+
+--
+-- TOC entry
+-- Name: idx_verification_token_account_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_verification_token_account_id ON public.verification_token(account_id);
 
 
 -- Completed on 2025-12-25 17:59:17
