@@ -8,4 +8,8 @@ public interface WorkerRepository {
     Optional<Worker> findByAccountId(Long accountId);
     List<Worker> findAll();
     Worker save(Worker admin);
+    void updatePersonalData(Long accountId, String firstName, String lastName,
+                            String phoneNumber, String peselNumber);
+    List<Worker> findByCompanyId(Long companyId);
 }
+

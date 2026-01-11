@@ -203,6 +203,8 @@ public class PaymentService {
         return createPaymentEntity(accountId, sessionId, amountMinor, currency, status, "parking");
     }
 
+
+
     private VirtualPayment createPaymentEntity(Long accountId, Long sessionId, int amountMinor, String currency, String status, String activity) {
         VirtualPayment payment = new VirtualPayment();
         payment.setAmountMinor(amountMinor);
@@ -213,5 +215,43 @@ public class PaymentService {
         payment.setActivity(activity != null ? activity : "parking");
         payment.setDateTransaction(LocalDateTime.now());
         return payment;
+    }
+
+    /**
+     * Get payments by list of session IDs
+     * Used by admin-service for financial reports
+     *
+     * @param sessionIds List of session IDs
+     * @return List of payment data as Maps
+     */
+    public java.util.List<java.util.Map<String, Object>> getPaymentsBySessionIds(java.util.List<Long> sessionIds) {
+        if (sessionIds == null || sessionIds.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+
+        java.util.List<VirtualPayment> paymentEntities = payments.findBySessionIds(sessionIds);
+
+        // Convert VirtualPayment entities to Maps for JSON serialization
+        return paymentEntities.stream()
+                .map(this::convertPaymentToMap)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Convert VirtualPayment entity to Map for API response
+     */
+    private java.util.Map<String, Object> convertPaymentToMap(VirtualPayment payment) {
+        java.util.Map<String, Object> map = new java.util.HashMap<>();
+        map.put("paymentId", payment.getId());
+        map.put("accountId", payment.getRefAccountId());
+        map.put("sessionId", payment.getRefSessionId());
+        map.put("amountMinor", payment.getAmountMinor());
+        map.put("amount", payment.getAmountMinor() / 100.0); // Convert to main units (PLN)
+        map.put("currencyCode", payment.getCurrencyCode());
+        map.put("status", payment.getStatusPaid());
+        map.put("activity", payment.getActivity());
+        map.put("dateTransaction", payment.getDateTransaction() != null ?
+                payment.getDateTransaction().toString() : null);
+        return map;
     }
 }

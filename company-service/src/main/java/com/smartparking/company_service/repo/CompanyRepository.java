@@ -9,4 +9,5 @@ public interface CompanyRepository {
     Optional<Company> findByTaxId(String taxId);
     List<Company> findAll();
     Company save(Company company);
+    String getNameById(Long id);
 }

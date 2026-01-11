@@ -86,4 +86,26 @@ public class JdbcParkingLocationRepository implements ParkingLocationRepository 
             return location;
         }
     }
+
+    @Override
+    public String getNameById(Long parkingId) {
+        try {
+            return jdbc.queryForObject(
+                    "SELECT name_parking FROM parking_location WHERE parking_id = ?",
+                    String.class,
+                    parkingId
+            );
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
+    public List<Long> getIdsByCompanyId(Long companyId) {
+        return jdbc.queryForList(
+                "SELECT parking_id FROM parking_location WHERE ref_company_id = ?",
+                Long.class,
+                companyId
+        );
+    }
 }

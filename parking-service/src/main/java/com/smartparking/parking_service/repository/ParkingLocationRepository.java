@@ -10,4 +10,7 @@ public interface ParkingLocationRepository {
     List<ParkingLocation> findByCompanyId(Long companyId);
     List<ParkingLocation> findAll();
     ParkingLocation save(ParkingLocation location);
+
+    String getNameById(Long parkingId);
+    List<Long> getIdsByCompanyId(Long companyId);
 }

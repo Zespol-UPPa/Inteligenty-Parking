@@ -19,7 +19,7 @@ public class Worker {
     public String getPhoneNumber() {return phoneNumber;}
     public void setPhoneNumber(String phoneNumber) {this.phoneNumber = phoneNumber;}
     public Long getRefParkingId() {return refParkingId;}
-    public void setRefParkingId(Long refWorkerId) {this.refParkingId = refParkingId;}
+    public void setRefParkingId(Long refParkingId) {this.refParkingId = refParkingId;}
     public Long getRefAccountId() {return refAccountId;}
     public void setRefAccountId(Long refAccountId) {this.refAccountId = refAccountId;}
     public Long getRefCompanyId() {return refCompanyId;}
