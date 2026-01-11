@@ -42,9 +42,10 @@ ALTER TYPE public.payment_status OWNER TO postgres;
 
 CREATE TYPE public.reservation_status AS ENUM (
     'Paid',
-    'Used',
+    'Active',
     'Expired',
-    'Cancelled'
+    'Cancelled',
+    'Used'
 );
 
 
@@ -164,7 +165,8 @@ CREATE TABLE public.parking_session (
     parking_id integer NOT NULL,
     spot_id integer NOT NULL,
     ref_vehicle_id integer CONSTRAINT parking_session_vehicle_id_not_null NOT NULL,
-    ref_account_id integer CONSTRAINT parking_session_id_account_not_null NOT NULL
+    ref_account_id integer,
+    reservation_id integer
 );
 
 
@@ -244,11 +246,13 @@ ALTER SEQUENCE public.parking_spot_id_spot_seq OWNED BY public.parking_spot.spot
 
 CREATE TABLE public.reservation_spot (
     reservation_id integer NOT NULL,
+    valid_from timestamp without time zone NOT NULL,
     valid_until timestamp without time zone NOT NULL,
     status_reservation public.reservation_status DEFAULT 'Paid'::public.reservation_status NOT NULL,
     spot_id integer NOT NULL,
     parking_id integer NOT NULL,
-    ref_account_id integer CONSTRAINT reservation_spot_account_id_not_null NOT NULL
+    ref_account_id integer CONSTRAINT reservation_spot_account_id_not_null NOT NULL,
+    vehicle_id bigint
 );
 
 
@@ -318,6 +322,46 @@ ALTER TABLE ONLY public.parking_spot ALTER COLUMN spot_id SET DEFAULT nextval('p
 
 ALTER TABLE ONLY public.reservation_spot ALTER COLUMN reservation_id SET DEFAULT nextval('public.reservation_spot_reservation_id_seq'::regclass);
 
+-- Migracja: dodaj kolumnę valid_from jeśli nie istnieje (dla istniejących baz danych)
+DO $$ 
+BEGIN
+    -- Migracja: dodaj kolumnę valid_from jeśli nie istnieje
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'reservation_spot' 
+        AND column_name = 'valid_from'
+    ) THEN
+        ALTER TABLE public.reservation_spot
+        ADD COLUMN valid_from timestamp without time zone;
+
+        -- Dla istniejących rekordów: ustaw valid_from na podstawie valid_until
+        -- Załóżmy że rezerwacja trwała 2 godziny (domyślna wartość)
+        UPDATE public.reservation_spot
+        SET valid_from = valid_until - INTERVAL '2 hours'
+        WHERE valid_from IS NULL;
+
+        -- Ustaw NOT NULL po wypełnieniu danych
+        ALTER TABLE public.reservation_spot
+        ALTER COLUMN valid_from SET NOT NULL;
+        
+        -- Dodaj indeks dla szybkiego sprawdzania dostępności miejsc
+        CREATE INDEX IF NOT EXISTS idx_reservation_spot_time_range
+        ON public.reservation_spot(spot_id, valid_from, valid_until)
+        WHERE status_reservation = 'Paid';
+    END IF;
+
+    -- Migracja: dodaj kolumnę vehicle_id jeśli nie istnieje
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'reservation_spot'
+          AND column_name = 'vehicle_id'
+    ) THEN
+        ALTER TABLE public.reservation_spot
+        ADD COLUMN vehicle_id bigint;
+    END IF;
+END $$;
 
 --
 -- TOC entry 4956 (class 0 OID 24940)
@@ -355,32 +399,89 @@ COPY public.parking_pricing (pricing_id, curency_code, rate_per_min, free_minute
 -- Data for Name: parking_session; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.parking_session (session_id, entry_time, exit_time, price_total_minor, payment_status, parking_id, spot_id, ref_vehicle_id, ref_account_id) FROM stdin;
-2	2025-12-20 08:02:15	2025-12-20 10:06:05	12.10	Paid	2	11	2	17
-3	2025-12-20 08:03:50	2025-12-20 10:03:40	11.00	Paid	3	21	3	18
-4	2025-12-20 08:05:05	2025-12-20 10:12:10	14.40	Paid	4	31	4	19
-5	2025-12-20 08:06:42	2025-12-20 10:09:22	14.95	Paid	5	41	5	20
-6	2025-12-20 08:08:10	2025-12-20 10:18:55	12.00	Paid	1	2	6	21
-7	2025-12-20 08:09:55	2025-12-20 10:29:40	13.00	Paid	3	22	8	23
-8	2025-12-20 08:11:20	2025-12-20 10:22:30	13.20	Paid	2	12	7	22
-11	2025-12-20 08:15:33	\N	\N	Session	2	13	12	27
-12	2025-12-20 08:17:02	\N	\N	Session	1	3	11	26
-13	2025-12-20 08:18:40	\N	\N	Session	5	43	15	30
-14	2025-12-20 08:20:11	\N	\N	Session	3	23	13	28
-15	2025-12-20 08:21:57	\N	\N	Session	4	33	14	29
-16	2025-12-20 08:23:25	\N	\N	Session	1	5	16	31
-17	2025-12-20 08:24:50	\N	\N	Session	2	14	17	65
-18	2025-12-20 08:26:18	\N	\N	Session	4	35	19	33
-19	2025-12-20 08:27:44	\N	\N	Session	3	24	18	32
-20	2025-12-20 08:29:10	\N	\N	Session	5	44	20	34
-21	2025-12-20 08:30:55	\N	\N	Session	4	36	24	65
-22	2025-12-20 08:32:21	\N	\N	Session	1	6	21	35
-23	2025-12-20 08:33:49	\N	\N	Session	3	25	23	37
-24	2025-12-20 08:35:10	\N	\N	Session	5	45	25	38
-25	2025-12-20 08:36:40	\N	\N	Session	2	15	22	36
-1	2025-12-20 08:00:40	2025-12-20 10:01:15	11.00	Paid	1	4	1	16
-9	2025-12-20 08:12:48	2025-12-20 10:33:15	17.55	Unpaid	5	42	10	25
-10	2025-12-20 08:14:05	2025-12-20 10:26:05	15.00	Unpaid	4	32	9	24
+-- Migracja: zmień parking_session.ref_account_id na nullable dla niezarejestrowanych klientów
+DO $$ 
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'parking_session' 
+        AND column_name = 'ref_account_id'
+        AND is_nullable = 'NO'
+    ) THEN
+        ALTER TABLE public.parking_session
+        ALTER COLUMN ref_account_id DROP NOT NULL;
+    END IF;
+END $$;
+
+-- Migracja: dodaj kolumnę reservation_id do parking_session jeśli nie istnieje
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'parking_session' 
+        AND column_name = 'reservation_id'
+    ) THEN
+        ALTER TABLE public.parking_session
+        ADD COLUMN reservation_id integer;
+    END IF;
+END $$;
+
+-- Migracja: dodaj status 'Active' do ENUM reservation_status jeśli nie istnieje
+-- Uwaga: W PostgreSQL nie można dodać wartości ENUM w określonej pozycji, więc dodajemy na końcu
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_enum 
+        WHERE enumlabel = 'Active' 
+        AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'reservation_status')
+    ) THEN
+        ALTER TYPE public.reservation_status ADD VALUE 'Active';
+    END IF;
+END $$;
+
+-- Migracja: dodaj foreign key constraint dla reservation_id w parking_session jeśli nie istnieje
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_schema = 'public' 
+        AND table_name = 'parking_session' 
+        AND constraint_name = 'parking_session_reservation_id_fkey'
+    ) THEN
+        ALTER TABLE public.parking_session
+        ADD CONSTRAINT parking_session_reservation_id_fkey 
+        FOREIGN KEY (reservation_id) REFERENCES public.reservation_spot(reservation_id);
+    END IF;
+END $$;
+
+COPY public.parking_session (session_id, entry_time, exit_time, price_total_minor, payment_status, parking_id, spot_id, ref_vehicle_id, ref_account_id, reservation_id) FROM stdin;
+2	2025-12-20 08:02:15	2025-12-20 10:06:05	12.10	Paid	2	11	2	17	\N
+3	2025-12-20 08:03:50	2025-12-20 10:03:40	11.00	Paid	3	21	3	18	\N
+4	2025-12-20 08:05:05	2025-12-20 10:12:10	14.40	Paid	4	31	4	19	\N
+5	2025-12-20 08:06:42	2025-12-20 10:09:22	14.95	Paid	5	41	5	20	\N
+6	2025-12-20 08:08:10	2025-12-20 10:18:55	12.00	Paid	1	2	6	21	\N
+7	2025-12-20 08:09:55	2025-12-20 10:29:40	13.00	Paid	3	22	8	23	\N
+8	2025-12-20 08:11:20	2025-12-20 10:22:30	13.20	Paid	2	12	7	22	\N
+11	2025-12-20 08:15:33	\N	\N	Session	2	13	12	27	\N
+12	2025-12-20 08:17:02	\N	\N	Session	1	3	11	26	\N
+13	2025-12-20 08:18:40	\N	\N	Session	5	43	15	30	\N
+14	2025-12-20 08:20:11	\N	\N	Session	3	23	13	28	\N
+15	2025-12-20 08:21:57	\N	\N	Session	4	33	14	29	\N
+16	2025-12-20 08:23:25	\N	\N	Session	1	5	16	31	\N
+17	2025-12-20 08:24:50	\N	\N	Session	2	14	17	65	\N
+18	2025-12-20 08:26:18	\N	\N	Session	4	35	19	33	\N
+19	2025-12-20 08:27:44	\N	\N	Session	3	24	18	32	\N
+20	2025-12-20 08:29:10	\N	\N	Session	5	44	20	34	\N
+21	2025-12-20 08:30:55	\N	\N	Session	4	36	24	65	\N
+22	2025-12-20 08:32:21	\N	\N	Session	1	6	21	35	\N
+23	2025-12-20 08:33:49	\N	\N	Session	3	25	23	37	\N
+24	2025-12-20 08:35:10	\N	\N	Session	5	45	25	38	\N
+25	2025-12-20 08:36:40	\N	\N	Session	2	15	22	36	\N
+1	2025-12-20 08:00:40	2025-12-20 10:01:15	11.00	Paid	1	4	1	16	\N
+9	2025-12-20 08:12:48	2025-12-20 10:33:15	17.55	Unpaid	5	42	10	25	\N
+10	2025-12-20 08:14:05	2025-12-20 10:26:05	15.00	Unpaid	4	32	9	24	\N
 \.
 
 
@@ -450,11 +551,11 @@ COPY public.parking_spot (spot_id, code, floor_lvl, to_reserved, type, id_parkin
 -- Data for Name: reservation_spot; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.reservation_spot (reservation_id, valid_until, status_reservation, spot_id, parking_id, ref_account_id) FROM stdin;
-2	2025-12-20 12:00:00	Expired	4	1	21
-3	2025-12-20 14:00:00	Cancelled	47	5	22
-4	2025-12-26 18:00:00	Paid	4	1	16
-1	2025-12-20 07:00:00	Used	4	1	16
+COPY public.reservation_spot (reservation_id, valid_from, valid_until, status_reservation, spot_id, parking_id, ref_account_id, vehicle_id) FROM stdin;
+2	2025-12-20 10:00:00	2025-12-20 12:00:00	Expired	4	1	21	\N
+3	2025-12-20 12:00:00	2025-12-20 14:00:00	Cancelled	47	5	22	\N
+4	2025-12-26 16:00:00	2025-12-26 18:00:00	Paid	4	1	16	\N
+1	2025-12-20 05:00:00	2025-12-20 07:00:00	Used	4	1	16	\N
 \.
 
 
@@ -500,7 +601,9 @@ SELECT pg_catalog.setval('public.parking_spot_id_spot_seq', 50, true);
 -- Name: reservation_spot_reservation_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.reservation_spot_reservation_id_seq', 4, true);
+SELECT pg_catalog.setval('public.reservation_spot_reservation_id_seq', 
+                         (SELECT COALESCE(MAX(reservation_id), 0) FROM public.reservation_spot), 
+                         true);
 
 
 --
