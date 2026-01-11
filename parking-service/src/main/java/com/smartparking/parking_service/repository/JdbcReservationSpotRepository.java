@@ -27,8 +27,11 @@ public class JdbcReservationSpotRepository implements ReservationSpotRepository 
             ReservationSpot r = new ReservationSpot();
             r.setId(rs.getLong("reservation_id"));
 
-            Timestamp ts = rs.getTimestamp("valid_until");
-            r.setValidUntil(ts != null ? ts.toLocalDateTime() : null);
+            Timestamp tsFrom = rs.getTimestamp("valid_from");
+            r.setValidFrom(tsFrom != null ? tsFrom.toLocalDateTime() : null);
+            
+            Timestamp tsUntil = rs.getTimestamp("valid_until");
+            r.setValidUntil(tsUntil != null ? tsUntil.toLocalDateTime() : null);
 
             r.setStatusReservation(rs.getString("status_reservation"));
             r.setSpotId(rs.getLong("spot_id"));
@@ -41,8 +44,8 @@ public class JdbcReservationSpotRepository implements ReservationSpotRepository 
     @Override
     public Optional<ReservationSpot> findById(Long id) {
         var list = jdbc.query(
-                "SELECT reservation_id,valid_until, status_reservation , spot_id, parking_id , ref_account_id " +
-                        " FROM reservation_spot WHERE reservation_id = ?",
+                "SELECT reservation_id, valid_from, valid_until, status_reservation, spot_id, parking_id, ref_account_id " +
+                        "FROM reservation_spot WHERE reservation_id = ?",
                 mapper,
                 id
         );
@@ -52,8 +55,8 @@ public class JdbcReservationSpotRepository implements ReservationSpotRepository 
     @Override
     public List<ReservationSpot> findByAccountId(Long accountId) {
         return jdbc.query(
-                "SELECT reservation_id,valid_until, status_reservation , spot_id, parking_id , ref_account_id " +
-                        " FROM reservation_spot WHERE ref_account_id = ? ORDER BY valid_until DESC",
+                "SELECT reservation_id, valid_from, valid_until, status_reservation, spot_id, parking_id, ref_account_id " +
+                        "FROM reservation_spot WHERE ref_account_id = ? ORDER BY valid_until DESC",
                 mapper,
                 accountId
         );
@@ -62,8 +65,8 @@ public class JdbcReservationSpotRepository implements ReservationSpotRepository 
     @Override
     public List<ReservationSpot> findByParkingId(Long parkingId) {
         return jdbc.query(
-                "SELECT reservation_id,valid_until, status_reservation , spot_id, parking_id , ref_account_id " +
-                        "  FROM reservation_spot WHERE parking_id = ? ORDER BY valid_until DESC",
+                "SELECT reservation_id, valid_from, valid_until, status_reservation, spot_id, parking_id, ref_account_id " +
+                        "FROM reservation_spot WHERE parking_id = ? ORDER BY valid_until DESC",
                 mapper,
                 parkingId
         );
@@ -72,8 +75,8 @@ public class JdbcReservationSpotRepository implements ReservationSpotRepository 
     @Override
     public List<ReservationSpot> findBySpotId(Long spotId) {
         return jdbc.query(
-                "SELECT reservation_id,valid_until, status_reservation , spot_id, parking_id , ref_account_id " +
-                        "  FROM reservation_spot WHERE spot_id = ? ORDER BY valid_until DESC",
+                "SELECT reservation_id, valid_from, valid_until, status_reservation, spot_id, parking_id, ref_account_id " +
+                        "FROM reservation_spot WHERE spot_id = ? ORDER BY valid_until DESC",
                 mapper,
                 spotId
         );
@@ -82,7 +85,8 @@ public class JdbcReservationSpotRepository implements ReservationSpotRepository 
     @Override
     public List<ReservationSpot> findActiveByAccountId(Long accountId, LocalDateTime now) {
         return jdbc.query(
-                "SELECT reservation_id,valid_until, status_reservation , spot_id, parking_id , ref_account_id  FROM reservation_spot " +
+                "SELECT reservation_id, valid_from, valid_until, status_reservation, spot_id, parking_id, ref_account_id " +
+                        "FROM reservation_spot " +
                         "WHERE ref_account_id = ? AND valid_until >= ? " +
                         "AND status_reservation = 'Paid' " +
                         "ORDER BY valid_until ASC",
@@ -95,8 +99,8 @@ public class JdbcReservationSpotRepository implements ReservationSpotRepository 
     @Override
     public List<ReservationSpot> findAll() {
         return jdbc.query(
-                "SELECT reservation_id,valid_until, status_reservation , spot_id, parking_id , ref_account_id " +
-                        "  FROM reservation_spot ORDER BY valid_until DESC",
+                "SELECT reservation_id, valid_from, valid_until, status_reservation, spot_id, parking_id, ref_account_id " +
+                        "FROM reservation_spot ORDER BY valid_until DESC",
                 mapper
         );
     }
@@ -106,9 +110,10 @@ public class JdbcReservationSpotRepository implements ReservationSpotRepository 
         if (reservation.getId() == null) {
             Long id = jdbc.queryForObject(
                     "INSERT INTO reservation_spot(" +
-                            "valid_until, status_reservation, spot_id, parking_id, ref_account_id" +
-                            ") VALUES (?, ?, ?, ?, ?) RETURNING reservation_id",
+                            "valid_from, valid_until, status_reservation, spot_id, parking_id, ref_account_id" +
+                            ") VALUES (?, ?, ?, ?, ?, ?) RETURNING reservation_id",
                     Long.class,
+                    Timestamp.valueOf(reservation.getValidFrom()),
                     Timestamp.valueOf(reservation.getValidUntil()),
                     reservation.getStatusReservation(),
                     reservation.getSpotId(),
@@ -120,8 +125,9 @@ public class JdbcReservationSpotRepository implements ReservationSpotRepository 
         } else {
             jdbc.update(
                     "UPDATE reservation_spot SET " +
-                            "valid_until = ?, status_reservation = ?, spot_id = ?, parking_id = ?, ref_account_id = ? " +
+                            "valid_from = ?, valid_until = ?, status_reservation = ?, spot_id = ?, parking_id = ?, ref_account_id = ? " +
                             "WHERE reservation_id = ?",
+                    Timestamp.valueOf(reservation.getValidFrom()),
                     Timestamp.valueOf(reservation.getValidUntil()),
                     reservation.getStatusReservation(),
                     reservation.getSpotId(),

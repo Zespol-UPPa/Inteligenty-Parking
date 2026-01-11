@@ -505,7 +505,7 @@ public class EmailService {
 
     private String buildReservationConfirmationHtml(String parkingName, Long spotId, 
                                                     java.time.Instant startTime, java.time.Instant endTime) {
-        java.time.ZoneId zoneId = java.time.ZoneId.systemDefault();
+        java.time.ZoneId zoneId = java.time.ZoneId.of("UTC");
         String startStr = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
             .withZone(zoneId).format(startTime);
         String endStr = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
@@ -562,7 +562,7 @@ public class EmailService {
 
     private String buildParkingPaymentConfirmationHtml(java.time.Instant entryTime, java.time.Instant exitTime,
                                                       double amount, long durationHours, long durationMinutes) {
-        java.time.ZoneId zoneId = java.time.ZoneId.systemDefault();
+        java.time.ZoneId zoneId = java.time.ZoneId.of("UTC");
         String entryStr = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
             .withZone(zoneId).format(entryTime);
         String exitStr = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")

@@ -30,7 +30,6 @@ public class CustomerVehicleClient {
         try {
             String url = baseUrl + "/customer/internal/vehicles/by-plate?licencePlate={plate}";
             org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-            // Użyj X-Internal-Token zgodnie z InternalWalletController
             headers.set("X-Internal-Token", getInternalToken());
             org.springframework.http.HttpEntity<?> entity = new org.springframework.http.HttpEntity<>(headers);
             
@@ -44,6 +43,32 @@ public class CustomerVehicleClient {
             return Optional.ofNullable(response.getBody());
         } catch (Exception e) {
             return Optional.empty();
+        }
+    }
+    
+    /**
+     * Tworzy lub znajduje pojazd po tablicy rejestracyjnej
+     * Jeśli pojazd nie istnieje, tworzy nowy bez właściciela (customer_id = null)
+     * @param licencePlate - tablica rejestracyjna (znormalizowana: uppercase, trimmed)
+     * @return Map zawierająca vehicleId, accountId (może być null dla niezarejestrowanych)
+     */
+    public Map<String, Object> createOrGetVehicle(String licencePlate) {
+        try {
+            String url = baseUrl + "/customer/internal/vehicles/create-or-get?licencePlate={plate}";
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("X-Internal-Token", getInternalToken());
+            org.springframework.http.HttpEntity<?> entity = new org.springframework.http.HttpEntity<>(headers);
+            
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    new ParameterizedTypeReference<Map<String, Object>>() {},
+                    Map.of("plate", licencePlate)
+            );
+            return response.getBody();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create or get vehicle: " + e.getMessage(), e);
         }
     }
 
