@@ -387,6 +387,44 @@ services:
       JWT_SECRET: ${JWT_SECRET:-superSecretKeyChangeMeTo32CharsMin_123456}
     networks:
       - smartparking-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/ocr/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ocr-api-service:
+    build:
+      context: ./CNNOCR/ocr_api_service
+      dockerfile: Dockerfile
+    container_name: ocr-api-service
+    depends_on:
+      ocr-service:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      - OCR_SERVICE_URL=http://ocr-service:8086
+      - PARKING_ID=${PARKING_ID:-1}
+      - CAMERA_ID=${CAMERA_ID:-1}
+      - DIRECTION=${OCR_DIRECTION:-entry}
+      - MODEL_PATH=/app/CNNOCR/best.pt
+      - USE_GPU=${USE_GPU:-false}
+      - CAMERA_URL=${CAMERA_URL:-}
+      - CAMERA_LOCAL_PATH=${CAMERA_LOCAL_PATH:-/app/test_images}
+      - PORT=5000
+    volumes:
+      - ./CNNOCR/CNNOCR:/app/CNNOCR:ro
+      - ./CNNOCR/test_images:/app/test_images:ro
+    networks:
+      - smartparking-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
   email-service:
     build:

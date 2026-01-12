@@ -24,7 +24,13 @@ public class JdbcVehicleRepository implements VehicleRepository{
             Vehicle v = new Vehicle();
             v.setId(rs.getLong("vehicle_id"));
             v.setLicencePlate(rs.getString("licence_plate"));
-            v.setCustomerId(rs.getLong("customer_id"));
+            // Obsługa NULL w customer_id - dla niezarejestrowanych pojazdów
+            Object customerIdObj = rs.getObject("customer_id");
+            if (customerIdObj != null) {
+                v.setCustomerId(rs.getLong("customer_id"));
+            } else {
+                v.setCustomerId(null);
+            }
             return v;
         }
     };
@@ -86,7 +92,7 @@ public class JdbcVehicleRepository implements VehicleRepository{
                             "VALUES (?, ?) RETURNING vehicle_id",
                     Long.class,
                     vehicle.getLicencePlate(),
-                    vehicle.getCustomerId()
+                    vehicle.getCustomerId() != null ? vehicle.getCustomerId() : null
             );
             vehicle.setId(id);
             return vehicle;
@@ -95,7 +101,7 @@ public class JdbcVehicleRepository implements VehicleRepository{
                     "UPDATE vehicle SET licence_plate = ?, customer_id = ? " +
                             "WHERE vehicle_id = ?",
                     vehicle.getLicencePlate(),
-                    vehicle.getCustomerId(),
+                    vehicle.getCustomerId() != null ? vehicle.getCustomerId() : null,
                     vehicle.getId()
             );
             return vehicle;

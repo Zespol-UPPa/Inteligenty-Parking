@@ -14,6 +14,7 @@ public class ParkingSession {
     private Long spotId;
     private Long refVehicleId;
     private Long refAccountId;
+    private Long reservationId; // ID rezerwacji jeśli sesja powstała z rezerwacji
 
     public Long getId() {return id;}
     public void setId(Long id) {this.id = id;}
@@ -33,4 +34,6 @@ public class ParkingSession {
     public void setRefVehicleId(Long refVehicleId) {this.refVehicleId = refVehicleId;}
     public Long getRefAccountId() {return refAccountId;}
     public void setRefAccountId(Long refAccountId) {this.refAccountId = refAccountId;}
+    public Long getReservationId() {return reservationId;}
+    public void setReservationId(Long reservationId) {this.reservationId = reservationId;}
 }

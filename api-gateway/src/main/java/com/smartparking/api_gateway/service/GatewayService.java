@@ -70,6 +70,7 @@ public class GatewayService {
             if (incomingPath != null && (
                     incomingPath.equals("/parking/locations") || 
                     incomingPath.equals("/parking/spots") ||
+                    incomingPath.startsWith("/parking/spots/for-reservation") ||
                     (incomingPath.startsWith("/parking/locations/") && (incomingPath.endsWith("/details") || incomingPath.endsWith("/occupancy"))) ||
                     (incomingPath.startsWith("/parking/pricing/") && incomingPath.endsWith("/reservation-fee"))
             )) {

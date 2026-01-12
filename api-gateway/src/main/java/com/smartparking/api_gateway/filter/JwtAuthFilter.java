@@ -37,6 +37,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (path.equals("/health") || path.endsWith("/health")) return true;
         // Allow public parking endpoints (locations, spots, details, occupancy, pricing)
         if (path.equals("/parking/locations") || path.equals("/parking/spots")) return true;
+        if (path.startsWith("/parking/spots/for-reservation")) return true;
         if (path.startsWith("/parking/locations/") && (path.endsWith("/details") || path.endsWith("/occupancy"))) return true;
         if (path.startsWith("/parking/pricing/") && path.endsWith("/reservation-fee")) return true;
         return false;

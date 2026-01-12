@@ -87,4 +87,36 @@ public class VehicleService {
         }
         return vehicles.deleteById(vehicleId);
     }
+    
+    /**
+     * Znajduje pojazd po tablicy rejestracyjnej lub tworzy nowy bez właściciela (customer_id = null)
+     * Używane dla niezarejestrowanych klientów
+     * 
+     * @param licencePlate - tablica rejestracyjna (znormalizowana: uppercase, trimmed)
+     * @return Vehicle - istniejący lub nowo utworzony pojazd
+     */
+    public Vehicle createOrGetVehicle(String licencePlate) {
+        String normalizedPlate = licencePlate.toUpperCase().trim();
+        Optional<Vehicle> existingOpt = vehicles.findByLicencePlate(normalizedPlate);
+        
+        if (existingOpt.isPresent()) {
+            return existingOpt.get();
+        }
+        
+        // Utwórz nowy pojazd bez właściciela (customer_id = null)
+        Vehicle newVehicle = new Vehicle();
+        newVehicle.setLicencePlate(normalizedPlate);
+        newVehicle.setCustomerId(null); // NULL dla niezarejestrowanych
+        return vehicles.save(newVehicle);
+    }
+    
+    /**
+     * Znajduje pojazd po tablicy - używane przez parking-service
+     * 
+     * @param licencePlate - tablica rejestracyjna
+     * @return Optional<Vehicle>
+     */
+    public Optional<Vehicle> findByLicencePlate(String licencePlate) {
+        return vehicles.findByLicencePlate(licencePlate.toUpperCase().trim());
+    }
 }

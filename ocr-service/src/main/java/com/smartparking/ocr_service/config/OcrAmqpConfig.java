@@ -4,6 +4,7 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -28,7 +29,7 @@ public class OcrAmqpConfig {
     public Queue queue() { return new Queue(OCR_QUEUE); }
 
     @Bean
-    public Binding binding(Queue q, TopicExchange e) {
+    public Binding binding(Queue q, @Qualifier("exchange") TopicExchange e) {
         return BindingBuilder.bind(q).to(e).with(OCR_ROUTING);
     }
 }

@@ -242,8 +242,8 @@ COPY public.login_code (code_id, code, account_id, is_used) FROM stdin;
 -- Name: account_account_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.account_account_id_seq', (SELECT COALESCE(MAX(account_id), 0) + 1 FROM account), false);
-
+-- Synchronizuj sekwencję z maksymalnym ID w tabeli
+SELECT pg_catalog.setval('public.account_account_id_seq', COALESCE((SELECT MAX(account_id) FROM account), 0), true);
 
 --
 -- TOC entry 4932 (class 0 OID 0)

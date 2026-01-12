@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -42,6 +43,38 @@ public class PaymentController {
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("OK");
+    }
+
+    /**
+     * Pobiera historię transakcji dla danego konta użytkownika
+     */
+    @GetMapping("/transactions")
+    public ResponseEntity<List<Map<String, Object>>> getTransactions(HttpServletRequest request) {
+        try {
+            Long accountId = requireAccountId(request);
+            List<Map<String, Object>> transactions = payments.getTransactionsByAccountId(accountId);
+            return ResponseEntity.ok(transactions);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(401).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(List.of());
+        }
+    }
+
+    /**
+     * Pobiera statystyki dla danego konta użytkownika (totalSpent, totalTopUps, totalTransactions)
+     */
+    @GetMapping("/statistics")
+    public ResponseEntity<Map<String, Object>> getStatistics(HttpServletRequest request) {
+        try {
+            Long accountId = requireAccountId(request);
+            Map<String, Object> stats = payments.getStatisticsByAccountId(accountId);
+            return ResponseEntity.ok(stats);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(401).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to get statistics: " + e.getMessage()));
+        }
     }
 
     // JSON body version
@@ -159,6 +192,90 @@ public class PaymentController {
         PaymentStatus status = mapStatus(result.getStatus());
         PaymentDto dto = new PaymentDto(result.getPaymentId(), accountId, req.getAmount(), status, Instant.now(), "WALLET");
         return ResponseEntity.ok(dto);
+    }
+
+    @PostMapping(value = "/refund/reservation", consumes = "application/json")
+    public ResponseEntity<PaymentDto> refundReservationFee(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        // Check if this is an internal call (from customer-service)
+        Long accountId;
+        String internalToken = request.getHeader("X-Internal-Token");
+        if (internalToken != null && !internalToken.isBlank() && 
+            internalToken.equals(System.getenv("INTERNAL_SERVICE_TOKEN"))) {
+            if (body.get("accountId") != null) {
+                accountId = Long.valueOf(body.get("accountId").toString());
+            } else {
+                accountId = requireAccountId(request);
+            }
+        } else {
+            accountId = requireAccountId(request);
+        }
+        
+        if (body.get("paymentId") == null || body.get("amountMinor") == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        
+        Long paymentId = Long.valueOf(body.get("paymentId").toString());
+        Long amountMinor = Long.valueOf(body.get("amountMinor").toString());
+        
+        com.smartparking.payment_service.dto.PaymentResult result = payments.refundReservationFee(paymentId, accountId, amountMinor);
+        
+        PaymentStatus status = "Refunded".equals(result.getStatus()) ? PaymentStatus.CANCELLED : mapStatus(result.getStatus());
+        PaymentDto dto = new PaymentDto(result.getPaymentId(), accountId, 
+            new BigDecimal(amountMinor).divide(new BigDecimal(100)), status, Instant.now(), "WALLET");
+        return ResponseEntity.ok(dto);
+    }
+    
+    /**
+     * Endpoint do płatności dla niezarejestrowanych klientów (płatność przy wyjeździe)
+     * Używane przez terminal/kasę przy wyjeździe
+     */
+    @PostMapping("/session/{sessionId}/pay-guest")
+    public ResponseEntity<?> payForUnregisteredSession(
+            @PathVariable Long sessionId,
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        // Sprawdź token wewnętrzny (z parking-service lub terminala)
+        String internalToken = request.getHeader("X-Internal-Token");
+        if (internalToken == null || internalToken.isBlank() || 
+            !internalToken.equals(System.getenv("INTERNAL_SERVICE_TOKEN"))) {
+            return ResponseEntity.status(403).body(Map.of("error", "Unauthorized - internal token required"));
+        }
+        
+        Object amountMinorObj = body.get("amountMinor");
+        if (amountMinorObj == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "amountMinor is required"));
+        }
+        
+        Long amountMinor;
+        try {
+            if (amountMinorObj instanceof Number) {
+                amountMinor = ((Number) amountMinorObj).longValue();
+            } else {
+                amountMinor = Long.parseLong(amountMinorObj.toString());
+            }
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid amountMinor format: " + amountMinorObj));
+        }
+        
+        if (amountMinor <= 0) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Amount must be positive"));
+        }
+        
+        String paymentMethod = body.getOrDefault("paymentMethod", "cash").toString();
+        
+        try {
+            com.smartparking.payment_service.dto.PaymentResult result = 
+                payments.payForUnregisteredSession(sessionId, amountMinor, paymentMethod);
+            
+            return ResponseEntity.ok(Map.of(
+                "paymentId", result.getPaymentId(),
+                "status", result.getStatus(),
+                "sessionId", sessionId,
+                "amountMinor", amountMinor
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to process payment: " + e.getMessage()));
+        }
     }
     
     private PaymentStatus mapStatus(String dbStatus) {
