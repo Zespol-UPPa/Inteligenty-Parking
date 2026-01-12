@@ -17,6 +17,10 @@ spring:
     port: ${SPRING_RABBITMQ_PORT:5672}
     username: ${SPRING_RABBITMQ_USERNAME:guest}
     password: ${SPRING_RABBITMQ_PASSWORD:guest}
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
 
 server:
   port: 8088

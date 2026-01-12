@@ -1,9 +1,12 @@
 package com.smartparking.parking_service.controller;
 
 import com.smartparking.parking_service.service.ParkingQueryService;
+import com.smartparking.parking_service.service.ParkingSessionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import com.smartparking.parking_service.dto.IdResponse;
@@ -14,8 +17,11 @@ import com.smartparking.parking_service.dto.ParkingUsageDto;
 public class ParkingController {
 
     private final ParkingQueryService queries;
-    public ParkingController(ParkingQueryService queries) {
+    private final ParkingSessionService sessionService;
+    
+    public ParkingController(ParkingQueryService queries, ParkingSessionService sessionService) {
         this.queries = queries;
+        this.sessionService = sessionService;
     }
 
     @GetMapping("/health")
@@ -34,9 +40,42 @@ public class ParkingController {
     }
 
     @GetMapping("/spots/for-reservation")
-    public ResponseEntity<List<Map<String, Object>>> listSpotsForReservation(
-            @RequestParam Long locationId) {
-        return ResponseEntity.ok(queries.getSpotsForReservation(locationId));
+    public ResponseEntity<?> listSpotsForReservation(
+            @RequestParam Long locationId,
+            @RequestParam(required = false) String startDateTime,
+            @RequestParam(required = false) String endDateTime) {
+        try {
+            // Decode URL-encoded parameters if needed (Spring should do this automatically, but handle it explicitly)
+            // URLDecoder.decode() is safe for already-decoded strings (it will return them as-is)
+            if (startDateTime != null && !startDateTime.isBlank()) {
+                try {
+                    startDateTime = URLDecoder.decode(startDateTime, StandardCharsets.UTF_8);
+                } catch (IllegalArgumentException e) {
+                    // If decoding fails (unlikely), use the original string
+                }
+            }
+            if (endDateTime != null && !endDateTime.isBlank()) {
+                try {
+                    endDateTime = URLDecoder.decode(endDateTime, StandardCharsets.UTF_8);
+                } catch (IllegalArgumentException e) {
+                    // If decoding fails (unlikely), use the original string
+                }
+            }
+            
+            // Parse startDateTime and endDateTime, or use defaults
+            java.time.Instant start = startDateTime != null && !startDateTime.isBlank() 
+                ? java.time.Instant.parse(startDateTime) 
+                : java.time.Instant.now();
+            java.time.Instant end = endDateTime != null && !endDateTime.isBlank()
+                ? java.time.Instant.parse(endDateTime)
+                : start.plusSeconds(7200); // Default 2 hours
+            return ResponseEntity.ok(queries.getSpotsForReservation(locationId, start, end));
+        } catch (java.time.format.DateTimeParseException e) {
+            return ResponseEntity.status(400).body(Map.of("error", "Invalid date format: " + e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to parse dates: " + e.getMessage()));
+        }
     }
 
     // Admin-facing endpoints, wywoływane przez admin-service (nie bezpośrednio z frontu)
@@ -73,10 +112,19 @@ public class ParkingController {
     public ResponseEntity<IdResponse> createReservation(@RequestParam Long accountId,
                                                         @RequestParam Long parkingId,
                                                         @RequestParam Long spotId,
+                                                        @RequestParam Long vehicleId,
+                                                        @RequestParam String validFrom,
                                                         @RequestParam String validUntil,
                                                         @RequestParam(defaultValue = "Paid") String status) {
-        java.time.Instant instant = java.time.Instant.parse(validUntil);
-        long id = queries.createReservation(accountId, parkingId, spotId, instant, status);
+        java.time.Instant start = java.time.Instant.parse(validFrom);
+        java.time.Instant end = java.time.Instant.parse(validUntil);
+        
+        // Sprawdź dostępność miejsca przed utworzeniem rezerwacji
+        if (!queries.isSpotAvailableForTimeRange(spotId, start, end)) {
+            return ResponseEntity.status(409).body(null); // Conflict - spot not available
+        }
+        
+        long id = queries.createReservation(accountId, parkingId, spotId, vehicleId, start, end, status);
         return ResponseEntity.ok(new IdResponse(id));
     }
 
@@ -103,11 +151,124 @@ public class ParkingController {
         return ResponseEntity.ok(queries.getOccupancyData(id, dayOfWeek));
     }
 
+    // Customer-facing endpoint for active parking session
+    @GetMapping("/sessions/active")
+    public ResponseEntity<?> getActiveSession(@RequestParam Long accountId) {
+        java.util.Optional<Map<String, Object>> session = queries.getActiveSessionByAccountId(accountId);
+        return session.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Pobiera wszystkie sesje parkingowe dla danego konta użytkownika
+     */
+    @GetMapping("/sessions")
+    public ResponseEntity<List<Map<String, Object>>> getSessions(@RequestParam Long accountId,
+                                                                  @RequestParam(required = false, defaultValue = "false") boolean unpaidOnly) {
+        if (unpaidOnly) {
+            return ResponseEntity.ok(queries.getUnpaidSessionsByAccountId(accountId));
+        }
+        return ResponseEntity.ok(queries.getSessionsByAccountId(accountId));
+    }
+
+    /**
+     * Pobiera statystyki sesji parkingowych dla danego konta użytkownika
+     */
+    @GetMapping("/sessions/statistics")
+    public ResponseEntity<Map<String, Object>> getSessionStatistics(@RequestParam Long accountId) {
+        return ResponseEntity.ok(queries.getSessionStatistics(accountId));
+    }
+
+    /**
+     * Opłaca zakończoną sesję parkingową (exit_time != NULL, status Unpaid)
+     * Pobiera płatność z portfela i zmienia status na "Paid"
+     */
+    @PostMapping("/sessions/{sessionId}/pay")
+    public ResponseEntity<?> payForSession(@PathVariable Long sessionId) {
+        try {
+            ParkingSessionService.PaymentResult result = sessionService.payForSession(sessionId);
+            
+            if (!result.isSuccess()) {
+                return ResponseEntity.status(400).body(Map.of(
+                    "error", result.getErrorMessage() != null ? result.getErrorMessage() : "Payment failed"
+                ));
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "sessionId", result.getSessionId(),
+                "amountMinor", result.getAmountMinor(),
+                "amount", result.getAmountMinor() != null ? result.getAmountMinor() / 100.0 : 0.0,
+                "status", "Paid",
+                "message", "Session paid successfully"
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to pay session: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/pricing/{parkingId}/reservation-fee")
     public ResponseEntity<?> getReservationFee(@PathVariable Long parkingId) {
         java.util.Optional<Integer> feeOpt = queries.getReservationFee(parkingId);
-        return feeOpt.map(fee -> ResponseEntity.ok(Map.of("reservationFeeMinor", fee)))
+        return feeOpt.map(fee -> {
+            java.math.BigDecimal reservationFee = new java.math.BigDecimal(fee).divide(new java.math.BigDecimal(100));
+            return ResponseEntity.ok(Map.of(
+                    "reservationFeeMinor", fee,  // grosze (dla logiki biznesowej)
+                    "reservationFee", reservationFee  // złotówki (dla wyświetlania)
+            ));
+        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/pricing/{parkingId}")
+    public ResponseEntity<?> getPricing(@PathVariable Long parkingId) {
+        java.util.Optional<com.smartparking.parking_service.model.ParkingPricing> pricingOpt = queries.getPricing(parkingId);
+        return pricingOpt.map(pricing -> {
+            java.math.BigDecimal ratePerMin = new java.math.BigDecimal(pricing.getRatePerMin()).divide(new java.math.BigDecimal(100));
+            java.math.BigDecimal reservationFee = new java.math.BigDecimal(pricing.getReservationFeeMinor()).divide(new java.math.BigDecimal(100));
+            return ResponseEntity.ok(Map.of(
+                    "ratePerMin", pricing.getRatePerMin(),  // grosze za minutę
+                    "ratePerMinDecimal", ratePerMin,  // złotówki za minutę
+                    "freeMinutes", pricing.getFreeMinutes(),
+                    "roundingStepMin", pricing.getRoundingStepMin(),
+                    "reservationFeeMinor", pricing.getReservationFeeMinor(),  // grosze (deprecated - używaj ratePerMin * duration)
+                    "reservationFee", reservationFee,  // złotówki (deprecated)
+                    "currencyCode", pricing.getCurrencyCode() != null ? pricing.getCurrencyCode() : "PLN"
+            ));
+        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/reservations/{reservationId}")
+    public ResponseEntity<?> getReservationById(@PathVariable Long reservationId) {
+        java.util.Optional<Map<String, Object>> reservationOpt = queries.getReservationById(reservationId);
+        return reservationOpt.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/reservations/{reservationId}")
+    public ResponseEntity<?> cancelReservation(@PathVariable Long reservationId,
+                                               @RequestParam Long accountId) {
+        // Walidacja: sprawdź czy rezerwacja istnieje i należy do użytkownika
+        java.util.Optional<Map<String, Object>> reservationOpt = queries.getReservationById(reservationId);
+        if (reservationOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Map<String, Object> reservation = reservationOpt.get();
+        Long reservationAccountId = Long.valueOf(reservation.get("ref_account_id").toString());
+        if (!reservationAccountId.equals(accountId)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Reservation does not belong to this account"));
+        }
+        
+        boolean cancelled = queries.cancelReservation(reservationId, accountId);
+        if (cancelled) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.status(400).body(Map.of("error", "Cannot cancel reservation - invalid status or already started"));
+        }
     }
 }
 

@@ -20,8 +20,9 @@ public class OcrEntryListener {
     @RabbitListener(queues = ParkingAmqpConfig.PARKING_ENTRY_QUEUE)
     public void handleOcrEntry(OcrEntryEvent event) {
         try {
-            log.info("Received OCR entry event: plate={}, parking={}, camera={}", 
-                event.getLicencePlate(), event.getParkingId(), event.getCameraId());
+            String plate = event.getLicencePlate();
+            log.info("License plate recognized: plate={}, parking={}, camera={}, timestamp={}", 
+                plate, event.getParkingId(), event.getCameraId(), event.getTimestamp());
             
             Long sessionId = sessionService.createSessionOnEntry(
                 event.getLicencePlate(),
@@ -30,11 +31,16 @@ public class OcrEntryListener {
                 event.getTimestamp()
             );
             
-            log.info("Created parking session {} for plate {} at parking {}", 
-                sessionId, event.getLicencePlate(), event.getParkingId());
+            log.info("Entry processed: plate={}, parking={}, sessionId={}", 
+                plate, event.getParkingId(), sessionId);
+        } catch (IllegalStateException e) {
+            // To może być błąd duplikatu - już zalogowano w ParkingSessionService
+            log.warn("Entry event rejected: plate={}, parking={}, reason={}", 
+                event.getLicencePlate(), event.getParkingId(), e.getMessage());
+            // Nie rzucaj wyjątku - event był zduplikowany i został poprawnie obsłużony
         } catch (Exception e) {
-            log.error("Failed to create parking session for OCR entry event: {}", event, e);
-            // Don't throw - message will be retried or sent to DLQ
+            log.error("Failed to process OCR entry event: plate={}, parking={}, error={}", 
+                event.getLicencePlate(), event.getParkingId(), e.getMessage(), e);
         }
     }
 }

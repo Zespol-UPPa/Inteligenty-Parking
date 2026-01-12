@@ -338,8 +338,18 @@ SELECT pg_catalog.setval('public.customer_customer_id_seq', 50, true);
 -- Name: vehicle_vehicle_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.vehicle_vehicle_id_seq', 25, true);
+-- Synchronizuj sekwencję z maksymalnym ID w tabeli
+SELECT pg_catalog.setval('public.vehicle_vehicle_id_seq', COALESCE((SELECT MAX(vehicle_id) FROM vehicle), 0), true);
 
+-- Migracja: upewnij się, że sekwencja jest zawsze zsynchronizowana (dla istniejących baz)
+DO $$ 
+BEGIN
+    PERFORM pg_catalog.setval(
+        'public.vehicle_vehicle_id_seq', 
+        COALESCE((SELECT MAX(vehicle_id) FROM public.vehicle), 0), 
+        true
+    );
+END $$;
 
 --
 -- TOC entry 4939 (class 0 OID 0)

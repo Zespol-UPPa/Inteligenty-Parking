@@ -10,6 +10,7 @@ import com.smartparking.customer_service.dto.TopUpRequest;
 import com.smartparking.customer_service.dto.TopUpResult;
 import com.smartparking.customer_service.model.Customer;
 import com.smartparking.customer_service.client.AccountClient;
+import com.smartparking.customer_service.client.PaymentClient;
 import com.smartparking.customer_service.dto.ContactFormEvent;
 import com.smartparking.customer_service.messaging.ContactFormEventPublisher;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,8 +32,10 @@ public class CustomerController {
     private final AccountClient accountClient;
     private final ContactFormEventPublisher contactFormEventPublisher;
     private final TopUpService topUpService;
+    private final com.smartparking.customer_service.service.ParkingSessionService parkingSessionService;
+    private final PaymentClient paymentClient;
 
-    public CustomerController(CustomerProfileService profiles, VehicleService vehicles, ReservationService reservations, WalletService walletService, AccountClient accountClient, ContactFormEventPublisher contactFormEventPublisher, TopUpService topUpService) {
+    public CustomerController(CustomerProfileService profiles, VehicleService vehicles, ReservationService reservations, WalletService walletService, AccountClient accountClient, ContactFormEventPublisher contactFormEventPublisher, TopUpService topUpService, com.smartparking.customer_service.service.ParkingSessionService parkingSessionService, PaymentClient paymentClient) {
         this.profiles = profiles;
         this.vehicles = vehicles;
         this.reservations = reservations;
@@ -40,6 +43,8 @@ public class CustomerController {
         this.accountClient = accountClient;
         this.contactFormEventPublisher = contactFormEventPublisher;
         this.topUpService = topUpService;
+        this.parkingSessionService = parkingSessionService;
+        this.paymentClient = paymentClient;
     }
 
     private Long requireAccountId(RequestContext ctx) {
@@ -55,6 +60,23 @@ public class CustomerController {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Invalid account ID format: " + ctx.getUsername(), e);
         }
+    }
+
+    private String extractJwtToken(HttpServletRequest request) {
+        String auth = request.getHeader("Authorization");
+        if (auth != null && auth.startsWith("Bearer ")) {
+            return auth.substring(7);
+        }
+        // Fallback: try to get from cookie
+        jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (jakarta.servlet.http.Cookie cookie : cookies) {
+                if ("authToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 
     @GetMapping("/profile")
@@ -127,8 +149,66 @@ public class CustomerController {
             walletService.createForAccountId(accountId);
             wallet = walletService.getByAccountId(accountId); // Pobierz nowo utworzony rekord
         }
+        
+        // Pobierz statystyki z payment-service
+        try {
+            String jwtToken = extractJwtToken(request);
+            if (jwtToken != null) {
+                Map<String, Object> stats = paymentClient.getStatistics(accountId, jwtToken);
+                Map<String, Object> walletData = wallet.get();
+                walletData.put("totalSpent", stats.get("totalSpent"));
+                walletData.put("totalTopUps", stats.get("totalTopUps"));
+                walletData.put("totalTransactions", stats.get("totalTransactions"));
+                return ResponseEntity.ok(walletData);
+            }
+        } catch (Exception e) {
+            // Jeśli nie można pobrać statystyk, zwróć wallet bez statystyk
+            org.slf4j.LoggerFactory.getLogger(CustomerController.class).warn("Failed to get wallet statistics: {}", e.getMessage());
+        }
+        
+        // Fallback: zwróć wallet bez statystyk
         return wallet.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/wallet/transactions")
+    public ResponseEntity<?> getWalletTransactions(HttpServletRequest request) {
+        RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
+        if (ctx == null) return ResponseEntity.status(401).build();
+        
+        Long accountId = requireAccountId(ctx);
+        
+        try {
+            String jwtToken = extractJwtToken(request);
+            if (jwtToken == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "JWT token not found"));
+            }
+            List<Map<String, Object>> transactions = paymentClient.getTransactions(accountId, jwtToken);
+            return ResponseEntity.ok(transactions);
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(CustomerController.class).error("Failed to get transactions: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to get transactions: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/wallet/statistics")
+    public ResponseEntity<?> getWalletStatistics(HttpServletRequest request) {
+        RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
+        if (ctx == null) return ResponseEntity.status(401).build();
+        
+        Long accountId = requireAccountId(ctx);
+        
+        try {
+            String jwtToken = extractJwtToken(request);
+            if (jwtToken == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "JWT token not found"));
+            }
+            Map<String, Object> stats = paymentClient.getStatistics(accountId, jwtToken);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(CustomerController.class).error("Failed to get statistics: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to get statistics: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/wallet/topup")
@@ -160,11 +240,35 @@ public class CustomerController {
         return ResponseEntity.ok(reservations.list(requireAccountId(ctx)));
     }
 
+    @DeleteMapping("/reservations/{reservationId}")
+    public ResponseEntity<?> cancelReservation(HttpServletRequest request,
+                                              @PathVariable Long reservationId) {
+        RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
+        if (ctx == null) return ResponseEntity.status(401).build();
+        
+        Long accountId = requireAccountId(ctx);
+        
+        try {
+            com.smartparking.customer_service.dto.ReservationResult result = reservations.cancel(accountId, reservationId);
+            
+            if (result.isSuccess()) {
+                return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.status(400).body(Map.of("error", result.getErrorMessage()));
+            }
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(CustomerController.class).error("Failed to cancel reservation {}: {}", reservationId, e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to cancel reservation: " + e.getMessage()));
+        }
+    }
+
     @PostMapping("/reservations")
     public ResponseEntity<Map<String, Object>> createReservation(HttpServletRequest request,
                                                                  @RequestParam Long parkingId,
                                                                  @RequestParam Long spotId,
+                                                                 @RequestParam Long vehicleId,
                                                                  @RequestParam(required = false) String startDateTime,
+                                                                 @RequestParam(required = false) String endDateTime,
                                                                  @RequestParam(required = false) Long durationSeconds) {
         RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
         if (ctx == null) return ResponseEntity.status(401).build();
@@ -172,21 +276,38 @@ public class CustomerController {
         Instant start;
         if (startDateTime != null && !startDateTime.isBlank()) {
             try {
-                // Parse ISO-8601 format: "2026-01-07T14:00:00"
+                // Parse ISO-8601 format: "2026-01-07T14:00:00Z"
                 // URLSearchParams may encode ':' as '%3A', so decode first
                 String decodedDateTime = java.net.URLDecoder.decode(startDateTime, java.nio.charset.StandardCharsets.UTF_8);
                 start = Instant.parse(decodedDateTime);
             } catch (Exception e) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid date/time format: " + e.getMessage()));
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid start date/time format: " + e.getMessage()));
             }
         } else {
             start = Instant.now();
         }
         
-        Instant end = start.plusSeconds(durationSeconds != null ? durationSeconds : 7200); // Default 2 hours
+        Instant end;
+        if (endDateTime != null && !endDateTime.isBlank()) {
+            try {
+                // Parse ISO-8601 format: "2026-01-07T23:59:59Z"
+                String decodedEndDateTime = java.net.URLDecoder.decode(endDateTime, java.nio.charset.StandardCharsets.UTF_8);
+                end = Instant.parse(decodedEndDateTime);
+                
+                // Validate that end is after start
+                if (end.isBefore(start) || end.equals(start)) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "End time must be after start time"));
+                }
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid end date/time format: " + e.getMessage()));
+            }
+        } else {
+            // Fallback: use durationSeconds if endDateTime not provided
+            end = start.plusSeconds(durationSeconds != null ? durationSeconds : 7200); // Default 2 hours
+        }
         
         com.smartparking.customer_service.dto.ReservationResult result = reservations.create(
-            requireAccountId(ctx), parkingId, spotId, start, end
+            requireAccountId(ctx), parkingId, spotId, vehicleId, start, end
         );
         
         if (result.isSuccess()) {
@@ -233,29 +354,96 @@ public class CustomerController {
     public ResponseEntity<?> getHistory(HttpServletRequest request) {
         RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
         if (ctx == null) return ResponseEntity.status(401).build();
-        // Note: History requires implementation - may need to query parking-service
-        return ResponseEntity.ok(List.of());
+        
+        Long accountId = requireAccountId(ctx);
+        
+        try {
+            // Zwróć wszystkie sesje (zakończone i niezakończone)
+            return ResponseEntity.ok(parkingSessionService.getSessions(accountId));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to get history: " + e.getMessage()));
+        }
     }
 
     @GetMapping("/history/statistics")
     public ResponseEntity<?> getHistoryStatistics(HttpServletRequest request) {
         RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
         if (ctx == null) return ResponseEntity.status(401).build();
-        // Note: Statistics requires implementation
-        return ResponseEntity.ok(Map.of(
-                "totalSessions", 0,
-                "totalTime", 0,
-                "totalSpent", 0
-        ));
+        
+        Long accountId = requireAccountId(ctx);
+        
+        try {
+            Map<String, Object> stats = parkingSessionService.getSessionStatistics(accountId);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(CustomerController.class).error("Failed to get history statistics: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to get statistics: " + e.getMessage()));
+        }
     }
 
-    @PostMapping("/history/{sessionId}/pay")
+    @GetMapping("/sessions/active")
+    public ResponseEntity<?> getActiveSession(HttpServletRequest request) {
+        RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
+        if (ctx == null) return ResponseEntity.status(401).build();
+        
+        java.util.Optional<Map<String, Object>> sessionOpt = parkingSessionService.getActiveSession(requireAccountId(ctx));
+        // Zwróć 200 OK z null - brak aktywnej sesji to normalny przypadek, nie błąd
+        return ResponseEntity.ok(sessionOpt.orElse(null));
+    }
+    
+    /**
+     * Opłaca zakończoną sesję parkingową (exit_time != NULL, status Pending/Unpaid)
+     * Pobiera płatność z portfela i zmienia status na "Paid"
+     * 
+     * @param request HTTP request
+     * @param sessionId ID sesji do opłacenia
+     * @return Informacja o płatności (cena, status płatności)
+     */
+    @PostMapping("/sessions/{sessionId}/pay")
     public ResponseEntity<?> payForSession(HttpServletRequest request,
                                           @PathVariable Long sessionId) {
         RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
         if (ctx == null) return ResponseEntity.status(401).build();
-        // Note: Payment requires implementation - may need to communicate with payment-service
-        return ResponseEntity.status(501).body(Map.of("error", "Payment not yet implemented"));
+        
+        Long accountId = requireAccountId(ctx);
+        
+        try {
+            org.springframework.http.ResponseEntity<Map<String, Object>> response = parkingSessionService.payForSession(accountId, sessionId);
+            return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            // Przekaż błąd z parking-service
+            if (e.getStatusCode().value() == 404) {
+                return ResponseEntity.status(404).body(Map.of("error", "Session not found"));
+            } else if (e.getStatusCode().value() == 400) {
+                return ResponseEntity.status(400).body(Map.of("error", e.getResponseBodyAsString()));
+            }
+            return ResponseEntity.status(e.getStatusCode().value()).body(Map.of("error", "Payment failed: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to pay session: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Pobiera wszystkie sesje parkingowe dla danego konta użytkownika
+     */
+    @GetMapping("/sessions")
+    public ResponseEntity<?> getSessions(HttpServletRequest request,
+                                         @RequestParam(required = false, defaultValue = "false") boolean unpaidOnly) {
+        RequestContext ctx = (RequestContext) request.getAttribute("requestContext");
+        if (ctx == null) return ResponseEntity.status(401).build();
+        
+        Long accountId = requireAccountId(ctx);
+        
+        try {
+            if (unpaidOnly) {
+                return ResponseEntity.ok(parkingSessionService.getUnpaidSessions(accountId));
+            }
+            return ResponseEntity.ok(parkingSessionService.getSessions(accountId));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to get sessions: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/internal/create")

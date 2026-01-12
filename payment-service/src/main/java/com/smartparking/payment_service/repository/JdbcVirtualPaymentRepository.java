@@ -37,7 +37,13 @@ public class JdbcVirtualPaymentRepository implements VirtualPaymentRepository {
             Timestamp ts = rs.getTimestamp("date_transaction");
             p.setDateTransaction(ts != null ? ts.toLocalDateTime() : null);
 
-            p.setRefAccountId(rs.getLong("ref_account_id"));
+            // Obsługa NULL w ref_account_id - dla niezarejestrowanych klientów
+            Object accountIdObj = rs.getObject("ref_account_id");
+            if (accountIdObj != null) {
+                p.setRefAccountId(rs.getLong("ref_account_id"));
+            } else {
+                p.setRefAccountId(null);
+            }
             p.setRefSessionId(rs.getLong("ref_session_id"));
             p.setActivity(rs.getString("activity"));
             return p;
@@ -79,7 +85,7 @@ public class JdbcVirtualPaymentRepository implements VirtualPaymentRepository {
                         payment.getCurrencyCode(),
                         payment.getStatusPaid(),
                         Timestamp.valueOf(payment.getDateTransaction()),
-                        payment.getRefAccountId(),
+                        payment.getRefAccountId() != null ? payment.getRefAccountId() : null,
                         payment.getRefSessionId(),
                         payment.getActivity()
                 );
@@ -105,7 +111,7 @@ public class JdbcVirtualPaymentRepository implements VirtualPaymentRepository {
                             payment.getCurrencyCode(),
                             payment.getStatusPaid(),
                             Timestamp.valueOf(payment.getDateTransaction()),
-                            payment.getRefAccountId(),
+                            payment.getRefAccountId() != null ? payment.getRefAccountId() : null,
                             payment.getRefSessionId(),
                             payment.getActivity()
                     );
@@ -127,7 +133,7 @@ public class JdbcVirtualPaymentRepository implements VirtualPaymentRepository {
                     payment.getCurrencyCode(),
                     payment.getStatusPaid(),
                     Timestamp.valueOf(payment.getDateTransaction()),
-                    payment.getRefAccountId(),
+                    payment.getRefAccountId() != null ? payment.getRefAccountId() : null,
                     payment.getRefSessionId(),
                     payment.getActivity(),
                     payment.getId()

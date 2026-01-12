@@ -46,7 +46,7 @@ public class SecurityConfig {
                         // Auth endpoints (registration, login, verification) - public
                         .requestMatchers("/auth/**", "/api/auth/**", "/actuator/**").permitAll()
                         // Public parking endpoints (locations, spots, details, occupancy, pricing)
-                        .requestMatchers("/parking/locations", "/parking/spots", "/parking/locations/*/details", "/parking/locations/*/occupancy", "/parking/pricing/*/reservation-fee").permitAll()
+                        .requestMatchers("/parking/locations", "/parking/spots", "/parking/spots/for-reservation*", "/parking/locations/*/details", "/parking/locations/*/occupancy", "/parking/pricing/*/reservation-fee").permitAll()
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )

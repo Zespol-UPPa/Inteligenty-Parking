@@ -65,7 +65,7 @@ CREATE TABLE public.virtual_payment (
     currency_code character varying(5) NOT NULL,
     status_paid public.status_paid DEFAULT 'Pending'::public.status_paid NOT NULL,
     date_transaction timestamp without time zone NOT NULL,
-    ref_account_id integer CONSTRAINT virtual_payment_id_account_not_null NOT NULL,
+    ref_account_id integer,
     ref_session_id integer CONSTRAINT virtual_payment_id_session_not_null NOT NULL,
     activity public.activity_type
 );
