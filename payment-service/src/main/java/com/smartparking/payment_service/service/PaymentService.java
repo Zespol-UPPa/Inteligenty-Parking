@@ -377,6 +377,8 @@ public class PaymentService {
         map.put("dateTransaction", payment.getDateTransaction() != null ?
                 payment.getDateTransaction().toString() : null);
         return map;
+    }
+    /*
      * Pobiera wszystkie transakcje dla danego konta użytkownika
      * @param accountId ID konta użytkownika
      * @return Lista transakcji w formacie Map
