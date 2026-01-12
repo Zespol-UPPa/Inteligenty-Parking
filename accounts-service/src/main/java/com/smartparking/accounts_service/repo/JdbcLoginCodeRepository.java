@@ -77,7 +77,7 @@ public class JdbcLoginCodeRepository implements LoginCodeRepository {
     public LoginCode markUsed(LoginCode code) {
         jdbc.update(
                 "UPDATE login_code SET is_used = TRUE WHERE code_id = ?",
-                code.getCode()
+                code.getId()
         );
         return code;
     }

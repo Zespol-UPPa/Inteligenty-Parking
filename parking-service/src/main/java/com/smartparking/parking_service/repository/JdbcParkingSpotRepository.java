@@ -78,12 +78,11 @@ public class JdbcParkingSpotRepository implements ParkingSpotRepository {
         if (spot.getId() == null) {
             Long id = jdbc.queryForObject(
                     "INSERT INTO parking_spot(code, floor_lvl, to_reserved, type, id_parking) " +
-                            "VALUES (?, ?, ?, ?, ?) RETURNING spot_id",
+                            "VALUES (?, ?, ?, 'Available', ?) RETURNING spot_id",
                     Long.class,
                     spot.getCode(),
                     spot.getFloorLvl(),
                     spot.isToReserved(),
-                    spot.getType(),
                     spot.getParkingId()
             );
             spot.setId(id);

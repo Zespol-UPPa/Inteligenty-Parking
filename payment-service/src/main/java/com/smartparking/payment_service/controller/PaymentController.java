@@ -290,4 +290,24 @@ public class PaymentController {
             default -> PaymentStatus.FAILED;
         };
     }
+
+    /**
+     * Get payments by list of session IDs
+     * Used by admin-service for financial reports
+     *
+     * POST /payment/admin/by-sessions
+     * Body: [sessionId1, sessionId2, ...]
+     * Returns: List of payment objects
+     */
+    @PostMapping("/admin/by-sessions")
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getPaymentsBySessionIds(
+            @RequestBody java.util.List<Long> sessionIds) {
+
+        if (sessionIds == null || sessionIds.isEmpty()) {
+            return ResponseEntity.ok(new java.util.ArrayList<>());
+        }
+
+        java.util.List<java.util.Map<String, Object>> paymentData = payments.getPaymentsBySessionIds(sessionIds);
+        return ResponseEntity.ok(paymentData);
+    }
 }

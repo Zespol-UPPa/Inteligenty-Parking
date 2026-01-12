@@ -86,5 +86,18 @@ public class JdbcCompanyRepository implements CompanyRepository{
             return company;
         }
     }
+
+    @Override
+    public String getNameById(Long id) {
+        try {
+            return jdbc.queryForObject(
+                    "SELECT name_company FROM company WHERE company_id = ?",
+                    String.class,
+                    id
+            );
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }
 

@@ -98,4 +98,33 @@ public class JdbcWorkerRepository implements WorkerRepository {
             return worker;
         }
     }
+
+    @Override
+    public void updatePersonalData(Long accountId, String firstName, String lastName,
+                                   String phoneNumber, String peselNumber) {
+        int rowsAffected = jdbc.update(
+                "UPDATE worker SET first_name = ?, last_name = ?, phone_number = ?, pesel_number = ? " +
+                        "WHERE ref_account_id = ?",
+                firstName,
+                lastName,
+                phoneNumber,
+                peselNumber,
+                accountId
+        );
+
+        if (rowsAffected == 0) {
+            throw new RuntimeException("Worker not found for accountId: " + accountId);
+        }
+    }
+
+    @Override
+    public List<Worker> findByCompanyId(Long companyId) {
+        return jdbc.query(
+                "SELECT worker_id, first_name, last_name, phone_number, pesel_number, " +
+                        "ref_account_id, ref_company_id, ref_parking_id " +
+                        "FROM worker WHERE ref_company_id = ?",
+                mapper,
+                companyId
+        );
+    }
 }

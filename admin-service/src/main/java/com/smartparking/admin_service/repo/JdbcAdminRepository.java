@@ -97,4 +97,32 @@ public class JdbcAdminRepository implements AdminRepository {
         }
     }
 
+    @Override
+    public void updatePersonalData(Long accountId, String firstName, String lastName,
+                                   String phoneNumber, String peselNumber) {
+        int rowsAffected = jdbc.update(
+                "UPDATE admin SET first_name = ?, last_name = ?, phone_number = ?, pesel_number = ? " +
+                        "WHERE ref_account_id = ?",
+                firstName,
+                lastName,
+                phoneNumber,
+                peselNumber,
+                accountId
+        );
+
+        if (rowsAffected == 0) {
+            throw new RuntimeException("Admin not found for accountId: " + accountId);
+        }
+    }
+    @Override
+    public List<Admin> findByCompanyId(Long companyId) {
+        return jdbc.query(
+                "SELECT admin_id, first_name, last_name, phone_number, pesel_number, " +
+                        "ref_account_id, ref_company_id " +
+                        "FROM admin WHERE ref_company_id = ?",
+                mapper,
+                companyId
+        );
+    }
+
 }
