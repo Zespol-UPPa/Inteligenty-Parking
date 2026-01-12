@@ -9,17 +9,14 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import com.smartparking.parking_service.service.ParkingSessionService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import com.smartparking.parking_service.dto.IdResponse;
 import com.smartparking.parking_service.dto.ParkingUsageDto;
+import com.smartparking.parking_service.service.ParkingSessionService;
 
 @RestController
 @RequestMapping("/parking")
@@ -28,12 +25,11 @@ public class ParkingController {
     private static final Logger log = LoggerFactory.getLogger(ParkingController.class);
     private final ParkingQueryService queries;
     private final ParkingCreationService parkingCreationService;
-    public ParkingController(ParkingQueryService queries, ParkingCreationService parkingCreationService) {
-        this.parkingCreationService = parkingCreationService;
     private final ParkingSessionService sessionService;
     
-    public ParkingController(ParkingQueryService queries, ParkingSessionService sessionService) {
+    public ParkingController(ParkingQueryService queries, ParkingCreationService parkingCreationService, ParkingSessionService sessionService) {
         this.queries = queries;
+        this.parkingCreationService = parkingCreationService;
         this.sessionService = sessionService;
     }
 
@@ -311,6 +307,7 @@ public class ParkingController {
         }
 
         return ResponseEntity.ok(parkingId);
+    }
     // Customer-facing endpoint for active parking session
     @GetMapping("/sessions/active")
     public ResponseEntity<?> getActiveSession(@RequestParam Long accountId) {
