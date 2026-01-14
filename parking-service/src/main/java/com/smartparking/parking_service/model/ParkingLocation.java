@@ -15,3 +15,4 @@ public class ParkingLocation {
     public Long getRefCompanyId() {return refCompanyId;}
     public void setRefCompanyId(Long refCompanyId) {this.refCompanyId = refCompanyId;}
 }
+

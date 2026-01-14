@@ -207,22 +207,6 @@ public class ParkingController {
         return ResponseEntity.ok(stats);
     }
 
-    /**
-     * GET /parking/pricing/{parkingId}
-     * Returns complete pricing information for a parking
-     */
-    @GetMapping("/pricing/{parkingId}")
-    public ResponseEntity<?> getParkingPricing(@PathVariable Long parkingId) {
-        log.info("Getting pricing for parkingId: {}", parkingId);
-        Map<String, Object> pricing = queries.getParkingPricing(parkingId);
-
-        if (pricing == null || pricing.isEmpty()) {
-            log.warn("No pricing found for parking {}", parkingId);
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok(pricing);
-    }
 
     /**
      * PUT /parking/admin/pricing/{pricingId}
