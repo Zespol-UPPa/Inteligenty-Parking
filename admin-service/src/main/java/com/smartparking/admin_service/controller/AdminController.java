@@ -602,6 +602,7 @@ public class AdminController {
 
     /**
      * Helper method to calculate start date based on period
+     * UPDATED: Added support for "semester" (6 months)
      */
     private LocalDateTime calculateStartDate(LocalDateTime endDate, String period) {
         return switch (period.toLowerCase()) {
@@ -609,11 +610,11 @@ public class AdminController {
             case "week" -> endDate.minusWeeks(1);
             case "month" -> endDate.minusMonths(1);
             case "quarter" -> endDate.minusMonths(3);
+            case "semester" -> endDate.minusMonths(6);  // <-- DODAJ TĘ LINIĘ
             case "year" -> endDate.minusYears(1);
             default -> endDate.minusMonths(1);
         };
     }
-
     /**
      * GET /admin/personnel
      * Returns all personnel (admins + workers) from admin's company
