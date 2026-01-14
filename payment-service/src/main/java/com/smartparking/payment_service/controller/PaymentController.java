@@ -299,7 +299,7 @@ public class PaymentController {
      * Body: [sessionId1, sessionId2, ...]
      * Returns: List of payment objects
      */
-    @PostMapping("/admin/by-sessions")
+    @PostMapping("/by-sessions")
     public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getPaymentsBySessionIds(
             @RequestBody java.util.List<Long> sessionIds) {
 

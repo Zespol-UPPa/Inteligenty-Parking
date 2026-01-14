@@ -9,3 +9,4 @@ public interface LoginCodeRepository {
     LoginCode markUsed(LoginCode code);
 
 }
+

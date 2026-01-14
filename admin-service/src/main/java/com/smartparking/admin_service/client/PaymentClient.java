@@ -49,7 +49,7 @@ public class PaymentClient {
                 return new ArrayList<>();
             }
 
-            String url = baseUrl + "/payment/admin/by-sessions";
+            String url = baseUrl + "/payment/by-sessions";
 
             log.info("Requesting payments for {} sessions from payment-service", sessionIds.size());
 

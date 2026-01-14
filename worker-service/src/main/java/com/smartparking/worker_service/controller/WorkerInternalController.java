@@ -112,7 +112,7 @@ public class WorkerInternalController {
     }
 
     // ========================================================================
-    // NEW ENDPOINTS FOR PERSONNEL MANAGEMENT (DODAJ TE!)
+    // ENDPOINTS FOR PERSONNEL MANAGEMENT
     // ========================================================================
 
     /**
@@ -137,8 +137,9 @@ public class WorkerInternalController {
             for (Worker worker : workers) {
                 Map<String, Object> workerData = new HashMap<>();
 
+                // Use refAccountId as the main ID (same across all services)
+                workerData.put("id", worker.getRefAccountId());  // ← This is what frontend displays
                 workerData.put("accountId", worker.getRefAccountId());
-                workerData.put("workerId", worker.getId());
                 workerData.put("firstName", worker.getFirstName());
                 workerData.put("lastName", worker.getLastName());
                 workerData.put("phoneNumber", worker.getPhoneNumber());

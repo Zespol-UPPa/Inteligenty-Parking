@@ -1,19 +1,16 @@
-// java
 package com.smartparking.worker_service.controller;
 
 import com.smartparking.worker_service.model.Worker;
 import com.smartparking.worker_service.client.AccountClient;
 import com.smartparking.worker_service.client.ParkingClient;
 import com.smartparking.worker_service.repo.WorkerRepository;
+import com.smartparking.worker_service.service.WorkerFinancialReportService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/worker")
@@ -23,19 +20,23 @@ public class WorkerController {
     private final WorkerRepository workerRepository;
     private final ParkingClient parkingClient;
     private final AccountClient accountClient;
+    private final WorkerFinancialReportService financialReportService; // ✅ DODANE
 
-    public WorkerController(ParkingClient parkingClient, AccountClient accountClient, WorkerRepository workerRepository) {
+    public WorkerController(
+            ParkingClient parkingClient,
+            AccountClient accountClient,
+            WorkerRepository workerRepository,
+            WorkerFinancialReportService financialReportService) { // ✅ DODANE
         this.parkingClient = parkingClient;
         this.accountClient = accountClient;
         this.workerRepository = workerRepository;
+        this.financialReportService = financialReportService; // ✅ DODANE
     }
 
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("OK");
     }
-
-
 
     /**
      * GET /worker/profile
@@ -174,4 +175,69 @@ public class WorkerController {
         }
     }
 
+    // ================================================
+    // FINANCIAL REPORTS (worker's parking only)
+    // ================================================
+
+    /**
+     * GET /worker/reports/financial/summary
+     * Get financial summary for worker's assigned parking
+     */
+    @GetMapping("/reports/financial/summary")
+    public ResponseEntity<Map<String, Object>> getFinancialSummary(
+            @RequestHeader("X-Account-Id") Long accountId,
+            @RequestParam String period) {
+
+        log.info("GET /worker/reports/financial/summary - accountId: {}, period: {}", accountId, period);
+
+        try {
+            Map<String, Object> summary = financialReportService.getFinancialSummary(accountId, period);
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            log.error("Error getting financial summary", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * GET /worker/reports/financial/revenue-over-time
+     * Get revenue over time for charts
+     */
+    @GetMapping("/reports/financial/revenue-over-time")
+    public ResponseEntity<List<Map<String, Object>>> getRevenueOverTime(
+            @RequestHeader("X-Account-Id") Long accountId,
+            @RequestParam String period) {
+
+        log.info("GET /worker/reports/financial/revenue-over-time - accountId: {}, period: {}", accountId, period);
+
+        try {
+            List<Map<String, Object>> data = financialReportService.getRevenueOverTime(accountId, period);
+            return ResponseEntity.ok(data);
+        } catch (Exception e) {
+            log.error("Error getting revenue over time", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * GET /worker/reports/financial/transactions
+     * Get detailed transactions list
+     */
+    @GetMapping("/reports/financial/transactions")
+    public ResponseEntity<List<Map<String, Object>>> getTransactions(
+            @RequestHeader("X-Account-Id") Long accountId,
+            @RequestParam String period,
+            @RequestParam(defaultValue = "all") String status) {
+
+        log.info("GET /worker/reports/financial/transactions - accountId: {}, period: {}, status: {}",
+                accountId, period, status);
+
+        try {
+            List<Map<String, Object>> transactions = financialReportService.getTransactions(accountId, period, status);
+            return ResponseEntity.ok(transactions);
+        } catch (Exception e) {
+            log.error("Error getting transactions", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }
